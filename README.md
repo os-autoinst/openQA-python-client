@@ -38,7 +38,7 @@ configuration file may include credentials for multiple servers; each
 section contains the credentials for the server named in the section
 title.
 
-If you create an `OpenQA_Client` instance without passing the `server'
+If you create an `OpenQA_Client` instance without passing the `server`
 argument, it will use the first server listed in the configuration file
 if there is one, otherwise it will use 'localhost'.
 
