@@ -27,7 +27,7 @@ from six.moves.urllib.parse import urlparse, urlunparse
 class OpenQA_Client(object):
     """A client for the OpenQA REST API; just handles API auth if
     needed and provides a couple of custom methods for convenience."""
-    def __init__(self, server=''):
+    def __init__(self, server='', verify=True):
         # Read in config files.
         config = configparser.ConfigParser()
         paths = ('/etc/openqa',
@@ -77,6 +77,9 @@ class OpenQA_Client(object):
             headers['X-API-Key'] = apikey
         self.session.headers.update(headers)
 
+        # Allow/forbid SSL certificate verification
+        self.verify = verify
+
     def _add_auth_headers(self, request):
         """Add authentication headers to a PreparedRequest. See
         openQA/lib/OpenQA/client.pm for the authentication design.
@@ -101,7 +104,7 @@ class OpenQA_Client(object):
         something unusual."""
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
-        resp = self.session.send(authed)
+        resp = self.session.send(authed, verify=self.verify)
         return resp.json()
 
     def openqa_request(self, method, path, params={}):
