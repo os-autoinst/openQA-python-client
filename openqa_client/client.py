@@ -51,7 +51,8 @@ class OpenQA_Client(object):
         if server.startswith('http'):
             scheme = urlparse(server).scheme
             server = urlparse(server).netloc
-        else:
+        elif not scheme:
+            # Don't stomp on the 'http, localhost' case we set up above
             scheme = 'https'
         self.baseurl = urlunparse((scheme, server, '', '', '', ''))
 
