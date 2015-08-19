@@ -27,7 +27,7 @@ from six.moves.urllib.parse import urlparse, urlunparse
 class OpenQA_Client(object):
     """A client for the OpenQA REST API; just handles API auth if
     needed and provides a couple of custom methods for convenience."""
-    def __init__(self, server=''):
+    def __init__(self, server='', scheme=''):
         # Read in config files.
         config = configparser.ConfigParser()
         paths = ('/etc/openqa',
