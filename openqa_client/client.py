@@ -21,6 +21,8 @@ import hashlib
 import hmac
 import os
 import requests
+from requests.packages.urllib3.util import Retry
+from requests.adapters import HTTPAdapter
 import time
 
 from six.moves import configparser
@@ -77,6 +79,9 @@ class OpenQA_Client(object):
         # Create a Requests session and ensure some standard headers
         # will be used for all requests run through the session.
         self.session = requests.Session()
+        retry = Retry(total=5, status_forcelist=[500, 501, 502, 503, 504])
+        self.session.mount("http://", HTTPAdapter(max_retries=retry))
+        self.session.mount("https://", HTTPAdapter(max_retries=retry))
         headers = {}
         headers['Accept'] = 'json'
         if apikey:
@@ -106,13 +111,19 @@ class OpenQA_Client(object):
         this directly instead of openqa_request() if you need to do
         something unusual. May raise ConnectionError if it cannot
         connect to a server (including e.g. if this happens to get
-        run on a system with no client config at all).
+        run on a system with no client config at all) or
+        RequestError if the request fails in some way (4xx status
+        code).
         """
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
         try:
             resp = self.session.send(authed)
-            return resp.json()
+            if resp.ok:
+                return resp.json()
+            else:
+                raise openqa_client.exceptions.RequestError(
+                    request.method, resp.url, resp.status_code)
         except requests.exceptions.ConnectionError as err:
             raise openqa_client.exceptions.ConnectionError(err)
 

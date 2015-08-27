@@ -22,3 +22,9 @@ class ConnectionError(Exception):
     requests.exceptions.ConnectionError.
     """
     pass
+
+class RequestError(Exception):
+    """Error raised when a request fails (after retries). 3-tuple of
+    method, URL, and status code.
+    """
+    pass
