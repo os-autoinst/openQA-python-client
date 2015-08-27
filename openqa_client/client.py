@@ -15,6 +15,8 @@
 #
 # Author: Adam Williamson <awilliam@redhat.com>
 
+"""Main client functionality."""
+
 import hashlib
 import hmac
 import os
@@ -24,9 +26,12 @@ import time
 from six.moves import configparser
 from six.moves.urllib.parse import urlparse, urlunparse
 
+import openqa_client.exceptions
+
 class OpenQA_Client(object):
     """A client for the OpenQA REST API; just handles API auth if
-    needed and provides a couple of custom methods for convenience."""
+    needed and provides a couple of custom methods for convenience.
+    """
     def __init__(self, server='', scheme=''):
         # Read in config files.
         config = configparser.ConfigParser()
@@ -99,15 +104,22 @@ class OpenQA_Client(object):
         """Passed a requests.Request, prepare it with the necessary
         headers, submit it, and return the JSON output. You can use
         this directly instead of openqa_request() if you need to do
-        something unusual."""
+        something unusual. May raise ConnectionError if it cannot
+        connect to a server (including e.g. if this happens to get
+        run on a system with no client config at all).
+        """
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
-        resp = self.session.send(authed)
-        return resp.json()
+        try:
+            resp = self.session.send(authed)
+            return resp.json()
+        except requests.exceptions.ConnectionError as err:
+            raise openqa_client.exceptions.ConnectionError(err)
 
     def openqa_request(self, method, path, params={}):
         """Perform a typical openQA request, with an API path and some
-        optional parameters."""
+        optional parameters.
+        """
         # As with the reference client, we assume relative paths are
         # relative to /api/v1.
         if not path.startswith('/'):
