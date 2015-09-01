@@ -21,8 +21,6 @@ import hashlib
 import hmac
 import os
 import requests
-from requests.packages.urllib3.util import Retry
-from requests.adapters import HTTPAdapter
 import time
 
 from six.moves import configparser
@@ -79,9 +77,6 @@ class OpenQA_Client(object):
         # Create a Requests session and ensure some standard headers
         # will be used for all requests run through the session.
         self.session = requests.Session()
-        retry = Retry(total=5, status_forcelist=[500, 501, 502, 503, 504])
-        self.session.mount("http://", HTTPAdapter(max_retries=retry))
-        self.session.mount("https://", HTTPAdapter(max_retries=retry))
         headers = {}
         headers['Accept'] = 'json'
         if apikey:
@@ -105,20 +100,28 @@ class OpenQA_Client(object):
         request.headers.update(headers)
         return request
 
-    def do_request(self, request):
+    def do_request(self, request, retries=5, wait=5):
         """Passed a requests.Request, prepare it with the necessary
         headers, submit it, and return the JSON output. You can use
         this directly instead of openqa_request() if you need to do
         something unusual. May raise ConnectionError if it cannot
         connect to a server (including e.g. if this happens to get
-        run on a system with no client config at all) or
-        RequestError if the request fails in some way (4xx status
-        code).
+        run on a system with no client config at all) or RequestError
+        if the request fails in some way after 'retries' attempts,
+        waiting 'wait' seconds between retries.
         """
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
+        # We can't use the nice urllib3 Retry stuff, because openSUSE
+        # 13.2 has a sadly outdated version of python-requests. We'll
+        # have to do it ourselves.
         try:
             resp = self.session.send(authed)
+            while not resp.ok and retries:
+                # LOG: debug log retrying
+                retries -= 1
+                time.sleep(wait)
+                resp = self.session.send(authed)
             if resp.ok:
                 return resp.json()
             else:
