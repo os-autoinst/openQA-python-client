@@ -96,9 +96,9 @@ class OpenQA_Client(object):
         timestamp = time.time()
         path = request.path_url.replace('%20', '+')
         apihash = hmac.new(
-            self.apisecret, '{0}{1}'.format(path, timestamp), hashlib.sha1)
+            self.apisecret.encode(), '{0}{1}'.format(path, timestamp).encode(), hashlib.sha1)
         headers = {}
-        headers['X-API-Microtime'] = timestamp
+        headers['X-API-Microtime'] = str(timestamp).encode()
         headers['X-API-Hash'] = apihash.hexdigest()
         request.headers.update(headers)
         return request
