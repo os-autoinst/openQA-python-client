@@ -20,6 +20,7 @@
 import hashlib
 import hmac
 import os
+import logging
 import requests
 import time
 
@@ -27,6 +28,8 @@ from six.moves import configparser
 from six.moves.urllib.parse import urlparse, urlunparse
 
 import openqa_client.exceptions
+
+logger = logging.getLogger(__name__)
 
 class OpenQA_Client(object):
     """A client for the OpenQA REST API; just handles API auth if
@@ -70,7 +73,7 @@ class OpenQA_Client(object):
                 apikey = config.get(self.baseurl, 'key')
                 self.apisecret = config.get(self.baseurl, 'secret')
             except:
-                # LOG: no API key == only GET methods allowed
+                logger.debug("No API key: only GET requests will be allowed")
                 apikey = ''
                 self.apisecret = ''
 
@@ -88,7 +91,7 @@ class OpenQA_Client(object):
         openQA/lib/OpenQA/client.pm for the authentication design.
         """
         if not self.apisecret:
-            # LOG: no API secret == no authenticated methods
+            # Can't auth without an API key.
             return request
         timestamp = time.time()
         path = request.path_url.replace('%20', '+')
@@ -118,7 +121,7 @@ class OpenQA_Client(object):
         try:
             resp = self.session.send(authed)
             while not resp.ok and retries:
-                # LOG: debug log retrying
+                logger.debug("do_request: request failed! Retrying...")
                 retries -= 1
                 time.sleep(wait)
                 resp = self.session.send(authed)
@@ -183,6 +186,7 @@ class OpenQA_Client(object):
             else:
                 if time.time() - waitstart > waittime * 60:
                     raise openqa_client.exceptions.WaitError("Waited too long!")
+                logger.debug("wait_jobs: jobs not all done, will retry in %s seconds", str(delay))
                 time.sleep(delay)
 
     def wait_build_jobs(self, build, waittime=480, delay=60):
@@ -204,4 +208,6 @@ class OpenQA_Client(object):
             else:
                 if time.time() - waitstart > waittime * 60:
                     raise openqa_client.exceptions.WaitError("Waited too long!")
+                logger.debug("wait_build_jobs: no jobs yet for %s, will retry in %s seconds",
+                             build, str(delay))
                 time.sleep(delay)
