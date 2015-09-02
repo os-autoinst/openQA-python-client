@@ -28,3 +28,7 @@ class RequestError(Exception):
     method, URL, and status code.
     """
     pass
+
+class WaitError(Exception):
+    """Error raised when some kind of wait has gone on too long."""
+    pass

@@ -143,3 +143,65 @@ class OpenQA_Client(object):
         url = '{0}{1}'.format(self.baseurl, path)
         req = requests.Request(method=method, url=url, params=params)
         return self.do_request(req)
+
+    def wait_jobs(self, jobs, waittime=180, delay=60):
+        """Wait up to 'waittime' minutes, checking every 'delay'
+        seconds, for the specified jobs (an iterable of job IDs) to
+        be 'done' or 'cancelled'. Returns a list of the job dicts
+        (with the useless outer dict which just has a single 'job:'
+        key stripped). You can also pass an existing iterable of
+        job dicts as 'jobs': if they are all done the list will be
+        returned immediately, unmodified, otherwise the ids will be
+        yanked out and used and the waiting will proceed. If waittime
+        is set to 0, we will query just once and either succeed or
+        fail immediately.
+        """
+        # First check if we got a list of dicts and they're all done,
+        # and return right away if so.
+        try:
+            done = [job['id'] for job in jobs if job['state'] in ('done', 'cancelled')]
+            if len(done) == len(jobs):
+                return jobs
+            else:
+                jobs = [job['id'] for job in jobs]
+        except TypeError:
+            # Job list is just IDs, not dicts
+            pass
+
+        waitstart = time.time()
+        done = {}
+        while True:
+            for job in jobs:
+                if job not in done:
+                    path = 'jobs/{0}'.format(str(job))
+                    jobdict = self.openqa_request('GET', path)['job']
+                    if jobdict['state'] in ('done', 'cancelled'):
+                        done[job] = jobdict
+
+            if len(done) == len(jobs):
+                return done.values()
+            else:
+                if time.time() - waitstart > waittime * 60:
+                    raise openqa_client.exceptions.WaitError("Waited too long!")
+                time.sleep(delay)
+
+    def wait_build_jobs(self, build, waittime=480, delay=60):
+        """Wait up to 'waittime' minutes, checking every 'delay'
+        seconds, for jobs for the specified BUILD to appear and
+        complete. This method waits for some jobs to appear for the
+        specified BUILD at all, then hands off to wait_jobs() to wait
+        for them to be complete. If waittime is set to 0, we will
+        query just once and either succeed or fail immediately.
+        """
+        waitstart = time.time()
+        jobs = []
+        while True:
+            jobs = self.openqa_request('GET', 'jobs', params={'build': build})['jobs']
+            if jobs:
+                # call wait_jobs with the remaining waittime
+                waited = (time.time() - waitstart) // 60
+                return self.wait_jobs(jobs, waittime=max(0, waittime - waited))
+            else:
+                if time.time() - waitstart > waittime * 60:
+                    raise openqa_client.exceptions.WaitError("Waited too long!")
+                time.sleep(delay)
