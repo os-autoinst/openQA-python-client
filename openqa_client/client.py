@@ -31,6 +31,48 @@ import openqa_client.exceptions
 
 logger = logging.getLogger(__name__)
 
+
+## HELPER FUNCTIONS (may need to be split out if this gets bigger)
+
+
+def get_latest_jobs(jobs):
+    """This is a job de-duping function. There is some ambiguity
+    about exactly what jobs are 'duplicates' in openQA, as it's
+    developed somewhat organically and it's not clear what is
+    convention, what is policy, what is technical limitation etc.
+    It would probably be useful if openQA itself provided more
+    capabilities here.
+
+    openQA has some code that does approximately the same thing,
+    backing the per-build 'Overview' you can get in the web UI.
+    As I write this it lives in
+    lib/OpenQA/WebAPI/Controller/Test.pm and is not externally
+    usable. It uses a 'key' made up of TEST setting, FLAVOR
+    setting, ARCH setting, and MACHINE setting. The overview is
+    for a specific combination of DISTRI, VERSION and BUILD.
+    We're going to reproduce that logic here.
+
+    Passed a list of job dicts, this will return a list containing
+    only the newest job for each key - it will filter out earlier
+    runs of 'the same' test for each distri/version/build included
+    in the list.
+    """
+    seen = list()
+    newjobs = list()
+    jobs.sort(key=lambda x:x['id'], reverse=True)
+    for job in jobs:
+        settings = job['settings']
+        key = (settings['DISTRI'], settings['VERSION'], settings['BUILD'], settings['TEST'],
+               settings['FLAVOR'], settings['ARCH'], settings['MACHINE'])
+        if not key in seen:
+            seen.append(key)
+            newjobs.append(job)
+    return newjobs
+
+
+## MAIN CLIENT CLASS
+
+
 class OpenQA_Client(object):
     """A client for the OpenQA REST API; just handles API auth if
     needed and provides a couple of custom methods for convenience.
@@ -189,25 +231,27 @@ class OpenQA_Client(object):
                 logger.debug("wait_jobs: jobs not all done, will retry in %s seconds", str(delay))
                 time.sleep(delay)
 
-    def wait_build_jobs(self, build, waittime=480, delay=60):
+    def wait_build_jobs(self, build, waittime=480, delay=60, filter_dupes=True):
         """Wait up to 'waittime' minutes, checking every 'delay'
         seconds, for jobs for the specified BUILD to appear and
         complete. This method waits for some jobs to appear for the
         specified BUILD at all, then hands off to wait_jobs() to wait
         for them to be complete. If waittime is set to 0, we will
-        query just once and either succeed or fail immediately.
+        query just once and either succeed or fail immediately. If
+        filter_dupes is True, duplicate jobs will be filtered out (see
+        get_latest_jobs docstring).
         """
         waitstart = time.time()
         jobs = []
         while True:
             jobs = self.openqa_request('GET', 'jobs', params={'build': build})['jobs']
-            if jobs:
-                # call wait_jobs with the remaining waittime
-                waited = (time.time() - waitstart) // 60
-                return self.wait_jobs(jobs, waittime=max(0, waittime - waited))
-            else:
-                if time.time() - waitstart > waittime * 60:
-                    raise openqa_client.exceptions.WaitError("Waited too long!")
-                logger.debug("wait_build_jobs: no jobs yet for %s, will retry in %s seconds",
-                             build, str(delay))
-                time.sleep(delay)
+            if jobs and all(job['state'] in ('done', 'cancelled') for job in jobs):
+                if filter_dupes:
+                    jobs = get_latest_jobs(jobs)
+                return jobs
+
+            if time.time() - waitstart > waittime * 60:
+                raise openqa_client.exceptions.WaitError("Waited too long!")
+            logger.debug("wait_build_jobs: jobs not complete or no jobs yet for %s, will retry in %s seconds",
+                         build, str(delay))
+            time.sleep(delay)
