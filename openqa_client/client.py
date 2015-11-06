@@ -87,23 +87,31 @@ class OpenQA_Client(object):
 
         # If server not specified, default to the first one in the
         # configuration file. If no configuration file, default to
-        # localhost.
+        # localhost. NOTE: this is different from the perl client, it
+        # *always* defaults to localhost.
         if not server:
             try:
                 server = config.sections()[0]
             except (configparser.MissingSectionHeaderError, IndexError):
+                server = 'localhost'
+
+        if server.startswith('http'):
+            # Handle entries like [http://foo] or [https://foo]. The,
+            # perl client does NOT handle these, so you shouldn't use
+            # them. This client started out supporting this, though,
+            # so it should continue to.
+            if not scheme:
+                scheme = urlparse(server).scheme
+            server = urlparse(server).netloc
+
+        if not scheme:
+            if server in ('localhost', '127.0.0.1', '::1'):
                 # Default to non-TLS for localhost; cert is unlikely to
                 # be valid for 'localhost' and there's no MITM...
                 scheme = 'http'
-                server = 'localhost'
+            else:
+                scheme = 'https'
 
-        # Handle both 'http(s)://server.com' and 'server.com'.
-        if server.startswith('http'):
-            scheme = urlparse(server).scheme
-            server = urlparse(server).netloc
-        elif not scheme:
-            # Don't stomp on the 'http, localhost' case we set up above
-            scheme = 'https'
         self.baseurl = urlunparse((scheme, server, '', '', '', ''))
 
         # Get the API secrets from the config file.
