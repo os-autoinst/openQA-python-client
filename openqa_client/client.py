@@ -183,7 +183,7 @@ class OpenQA_Client(object):
         except requests.exceptions.ConnectionError as err:
             raise openqa_client.exceptions.ConnectionError(err)
 
-    def openqa_request(self, method, path, params={}):
+    def openqa_request(self, method, path, params={}, retries = 5, wait = 5):
         """Perform a typical openQA request, with an API path and some
         optional parameters.
         """
@@ -195,7 +195,7 @@ class OpenQA_Client(object):
         method = method.upper()
         url = '{0}{1}'.format(self.baseurl, path)
         req = requests.Request(method=method, url=url, params=params)
-        return self.do_request(req)
+        return self.do_request(req, retries=retries, wait=wait)
 
     def wait_jobs(self, jobs, waittime=180, delay=60):
         """Wait up to 'waittime' minutes, checking every 'delay'
