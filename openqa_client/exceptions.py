@@ -31,4 +31,7 @@ class RequestError(Exception):
 
 class WaitError(Exception):
     """Error raised when some kind of wait has gone on too long."""
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(WaitError, self).__init__(*args)
+        self.unfinished_jobs = kwargs.get('unfinished_jobs', [])
