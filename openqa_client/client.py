@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author: Adam Williamson <awilliam@redhat.com>
+# Authors: Adam Williamson <awilliam@redhat.com>
+#          Ludwig Nussel   <ludwig.nussel@suse.de>
+#          Jan Sedlak      <jsedlak@redhat.com>
 
 """Main client functionality."""
 
@@ -197,6 +199,77 @@ class OpenQA_Client(object):
         req = requests.Request(method=method, url=url, params=params)
         return self.do_request(req, retries=retries, wait=wait)
 
+    def iterate_jobs(self, jobs=None, build=None, waittime=180, delay=60, filter_dupes=True):
+        """Generator function: yields lists of job dicts as they reach
+        'done' or 'cancelled' state. When all jobs are finished, the
+        generator completes. It yields list of dicts (rather than
+        single dicts) so the caller can operate on multiple jobs at
+        once (when multiple jobs are finished during single query).
+        When no jobs were finished since last query, it sleeps
+        for 'delay' seconds and then tries again, until at least one
+        job gets finished or 'waittime' timeout is reached (whereupon
+        it raises a WaitError). If 'waittime' is 0, we will query just
+        once, and return or fail immediately.
+
+        Either 'jobs' or 'build' must be specified. 'jobs' should be
+        iterable of job IDs (string or int). 'build' should be an
+        openQA BUILD to get all the jobs for. If both are specified,
+        'jobs' will be used and 'build' ignored. If filter_dupes is
+        True, duplicate jobs will be filtered out (see get_latest_jobs
+        docstring).
+
+        NOTE: this deprecates both wait_jobs and wait_build_jobs. They
+        will soon be removed entirely; all users should switch to this
+        function. This function requires at least openQA 4.2 on the
+        server.
+        """
+        if not build and not jobs:
+            raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
+        waitstart = time.time()
+        reported = set()
+
+        if jobs:
+            jobs = [str(j) for j in jobs]
+
+        while True:
+            if jobs:
+                # this gets all jobdicts with a single API query
+                params = {'ids': ','.join(jobs)}
+            else:
+                params = {'build': build}
+            jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
+
+            if filter_dupes:
+                jobdicts = get_latest_jobs(jobdicts)
+            done = [jd for jd in jobdicts if jd['state'] in ('done', 'cancelled')]
+
+            if done:
+                # yield newly-completed jobs and update the log
+                # of jobs we've reported
+                to_report = [jd for jd in done if jd['id'] not in reported]
+                reported.update([jd['id'] for jd in done])
+                if to_report:
+                    yield to_report
+
+            # In 'jobs' mode no jobdicts indicates a bad query, but we
+            # want to allow waiting for jobs from a build *before*
+            # they've been created, so we don't fail or return here
+            if jobdicts and len(done) >= len(jobdicts):
+                return  # return ends generator
+
+            if time.time() - waitstart > waittime * 60:
+                waiting_for = [jd['id'] for jd in jobdicts if jd['id'] not in reported]
+                raise openqa_client.exceptions.WaitError("Waited too long!",
+                                                         unfinished_jobs=waiting_for)
+            else:
+                if jobdicts:
+                    logger.debug("iterate_jobs: jobs not complete, will retry in %s seconds",
+                                 str(delay))
+                else:
+                    logger.debug("iterate_jobs: no jobs yet, will retry in %s seconds",
+                                 str(delay))
+                time.sleep(delay)
+
     def wait_jobs(self, jobs, waittime=180, delay=60):
         """Wait up to 'waittime' minutes, checking every 'delay'
         seconds, for the specified jobs (an iterable of job IDs) to
@@ -208,7 +281,12 @@ class OpenQA_Client(object):
         yanked out and used and the waiting will proceed. If waittime
         is set to 0, we will query just once and either succeed or
         fail immediately.
+
+        NOTE: this function is deprecated by iterate_jobs and will
+        soon be removed. Please switch to that function.
         """
+        logger.warning(
+            "wait_jobs: function is deprecated! iterate_jobs should be used instead")
         # First check if we got a list of dicts and they're all done,
         # and return right away if so.
         try:
@@ -248,7 +326,12 @@ class OpenQA_Client(object):
         query just once and either succeed or fail immediately. If
         filter_dupes is True, duplicate jobs will be filtered out (see
         get_latest_jobs docstring).
+
+        NOTE: this function is deprecated by iterate_jobs and will
+        soon be removed. Please switch to that function.
         """
+        logger.warning(
+            "wait_build_jobs: function is deprecated! iterate_jobs should be used instead")
         waitstart = time.time()
         jobs = []
         while True:
