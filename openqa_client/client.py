@@ -185,7 +185,7 @@ class OpenQA_Client(object):
         except requests.exceptions.ConnectionError as err:
             raise openqa_client.exceptions.ConnectionError(err)
 
-    def openqa_request(self, method, path, params={}, retries = 5, wait = 5):
+    def openqa_request(self, method, path, params={}, retries=5, wait=5):
         """Perform a typical openQA request, with an API path and some
         optional parameters.
         """
