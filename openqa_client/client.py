@@ -209,14 +209,17 @@ class OpenQA_Client(object):
         """
         jobs = list(jobs)
         while any(job['clone_id'] for job in jobs):
-            # Figure out what clone jobs we need to get (not including
-            # ones we already have)
+            toget = []
             ids = [job['id'] for job in jobs]
-            toget = ','.join([str(job['clone_id']) for job in jobs if
-                              job['clone_id'] and job['clone_id'] not in ids])
-            # Drop all cloned jobs from the list
-            jobs = [job for job in jobs if not job['clone_id']]
+            for job in jobs:
+                if job['clone_id']:
+                    logger.debug("Replacing job %s with clone %s", job['id'], job['clone_id'])
+                    if job['clone_id'] not in ids:
+                        toget.append(str(job['clone_id']))
+                    jobs.remove(job)
+
             if toget:
+                toget = ','.join(toget)
                 # Get clones and add them to the list
                 clones = self.openqa_request('GET', 'jobs', params={'ids': toget})['jobs']
                 jobs.extend(clones)
