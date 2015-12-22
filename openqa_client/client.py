@@ -199,6 +199,29 @@ class OpenQA_Client(object):
         req = requests.Request(method=method, url=url, params=params)
         return self.do_request(req, retries=retries, wait=wait)
 
+    def find_clones(self, jobs):
+        """Given an iterable of job dicts, this will see if any of the
+        jobs were cloned, and replace any that were cloned with the dicts
+        of their clones, returning a list. It recurses - so if 3 was
+        cloned as 4 and 4 was cloned as 5, you'll wind up with 5. If both
+        a job and its clone are already in the iterable, the original will
+        be removed.
+        """
+        jobs = list(jobs)
+        while any(job['clone_id'] for job in jobs):
+            # Figure out what clone jobs we need to get (not including
+            # ones we already have)
+            ids = [job['id'] for job in jobs]
+            toget = ','.join([str(job['clone_id']) for job in jobs if
+                              job['clone_id'] and job['clone_id'] not in ids])
+            # Drop all cloned jobs from the list
+            jobs = [job for job in jobs if not job['clone_id']]
+            if toget:
+                # Get clones and add them to the list
+                clones = self.openqa_request('GET', 'jobs', params={'ids': toget})['jobs']
+                jobs.extend(clones)
+        return jobs
+
     def iterate_jobs(self, jobs=None, build=None, waittime=180, delay=60, filter_dupes=True):
         """Generator function: yields lists of job dicts as they reach
         'done' or 'cancelled' state. When all jobs are finished, the
@@ -215,8 +238,9 @@ class OpenQA_Client(object):
         iterable of job IDs (string or int). 'build' should be an
         openQA BUILD to get all the jobs for. If both are specified,
         'jobs' will be used and 'build' ignored. If filter_dupes is
-        True, duplicate jobs will be filtered out (see get_latest_jobs
-        docstring).
+        True, cloned jobs will be replaced by their clones (see find_
+        clones docstring) and duplicate jobs will be filtered out (see
+        get_latest_jobs docstring).
 
         NOTE: this deprecates both wait_jobs and wait_build_jobs. They
         will soon be removed entirely; all users should switch to this
@@ -240,6 +264,9 @@ class OpenQA_Client(object):
             jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
 
             if filter_dupes:
+                # sub out clones
+                jobdicts = self.find_clones(jobdicts)
+                # filter dupes
                 jobdicts = get_latest_jobs(jobdicts)
             done = [jd for jd in jobdicts if jd['state'] in ('done', 'cancelled')]
 
