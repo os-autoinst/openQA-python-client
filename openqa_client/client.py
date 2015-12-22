@@ -317,6 +317,58 @@ class OpenQA_Client(object):
                 logger.debug("wait_jobs: jobs not all done, will retry in %s seconds", str(delay))
                 time.sleep(delay)
 
+    def iterate_jobs(self, jobs, waittime=180, delay=60):
+        """Generator function: yields list of dictionaries of jobs
+        as soon as they are finished (they reach 'done' or 'cancelled'
+        state). When all jobs are finished, returns empty value (as
+        generators should). It returns list of dicts (rather than dicts
+        directly), so that parent function can report multiple jobs at
+        once (when multiple jobs are finished during single query). When
+        no jobs were finished since last query, it sleeps for 'delay'
+        seconds and then tries again, until at least one job gets finished
+        or 'waittime' timeout is reached. 'jobs' should be list of either
+        IDs (string or int) of jobs or complete job dictionaries. If 'waittime'
+        is set to 0, we will query just once and either succeed or
+        fail immediately.
+        """
+        waitstart = time.time()
+        done = []
+        to_report = []
+        jobs_count = len(jobs)
+
+        try:
+            # get list of jobs that are already finished and convert dicts to IDs along the way
+            to_report = [job for job in jobs if job['state'] in ('done', 'cancelled')]
+            jobs = [job['id'] for job in jobs if job not in to_report]
+        except TypeError:
+            # Job list is just IDs, not dicts
+            pass
+
+        jobs = [int(j) for j in jobs]
+
+        while True:
+            for job in jobs:
+                if job not in done:
+                    path = 'jobs/{0}'.format(str(job))
+                    jobdict = self.openqa_request('GET', path)['job']
+                    if jobdict['state'] in ('done', 'cancelled'):
+                        to_report.append(jobdict)
+
+            if to_report:
+                # save list of jobs that were reported back to program and yield them
+                done.extend([int(job['id']) for job in to_report])
+                yield to_report
+                to_report = []
+
+            if len(done) >= jobs_count:
+                return  # return ends generator
+
+            if time.time() - waitstart > waittime * 60:
+                waiting_for = [j for j in jobs if j not in done]
+                raise openqa_client.exceptions.WaitError("Waited too long!", unfinished_jobs=waiting_for)
+            else:
+                time.sleep(delay)
+
     def wait_build_jobs(self, build, waittime=480, delay=60, filter_dupes=True):
         """Wait up to 'waittime' minutes, checking every 'delay'
         seconds, for jobs for the specified BUILD to appear and
