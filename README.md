@@ -40,7 +40,10 @@ title.
 
 If you create an `OpenQA_Client` instance without passing the `server`
 argument, it will use the first server listed in the configuration file
-if there is one, otherwise it will use 'localhost'.
+if there is one (except with Python 2.6, where one server from the file
+will be used, but not necessarily the first), otherwise it will use
+'localhost'. Note: this is a difference in behaviour from the perl
+client, which *always* uses 'localhost' unless a server name is passed.
 
 TLS/SSL connections are the default (except for localhost). You can
 pass the argument `scheme` to `OpenQA_Client` to force the use of
