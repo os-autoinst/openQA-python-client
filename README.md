@@ -42,8 +42,10 @@ If you create an `OpenQA_Client` instance without passing the `server`
 argument, it will use the first server listed in the configuration file
 if there is one, otherwise it will use 'localhost'.
 
-TLS/SSL connections are the default. You can state the server as
-`http://server.address` to force the use of unencrypted HTTP.
+TLS/SSL connections are the default (except for localhost). You can
+pass the argument `scheme` to `OpenQA_Client` to force the use of
+unencrypted HTTP, e.g.
+`OpenQA_Client(server='openqa.happyassassin.net', scheme='http')`.
 
 The API always returns JSON responses; this client's request functions
 parse the response before returning it.
