@@ -271,7 +271,14 @@ class OpenQA_Client(object):
                 params = {'ids': ','.join(jobs)}
             else:
                 params = {'build': build}
-            jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
+            try:
+                jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
+            except TypeError:
+                # Somehow, once, the return value of openqa_request()
+                # was None. I have no idea how that happened, but we'll
+                # just deal with it, life's too short.
+                logger.debug("openqa_request returned None, WTF?")
+                jobdicts = []
 
             if filter_dupes:
                 # sub out clones
