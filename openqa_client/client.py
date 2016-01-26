@@ -186,7 +186,7 @@ class OpenQA_Client(object):
                 logger.debug("Error: %s", err)
                 time.sleep(wait)
                 newwait = min(wait+wait, 60)
-                self.do_request(request, retries=retries-1, wait=newwait)
+                return self.do_request(request, retries=retries-1, wait=newwait)
             elif isinstance(err, openqa_client.exceptions.RequestError):
                 raise err
             elif isinstance(err, requests.exceptions.ConnectionError):
@@ -271,14 +271,7 @@ class OpenQA_Client(object):
                 params = {'ids': ','.join(jobs)}
             else:
                 params = {'build': build}
-            try:
-                jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
-            except TypeError:
-                # Somehow, once, the return value of openqa_request()
-                # was None. I have no idea how that happened, but we'll
-                # just deal with it, life's too short.
-                logger.debug("openqa_request returned None, WTF?")
-                jobdicts = []
+            jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
 
             if filter_dupes:
                 # sub out clones
