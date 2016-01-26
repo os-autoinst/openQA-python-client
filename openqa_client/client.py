@@ -155,15 +155,16 @@ class OpenQA_Client(object):
         request.headers.update(headers)
         return request
 
-    def do_request(self, request, retries=5, wait=5):
+    def do_request(self, request, retries=5, wait=10):
         """Passed a requests.Request, prepare it with the necessary
         headers, submit it, and return the JSON output. You can use
         this directly instead of openqa_request() if you need to do
-        something unusual. May raise ConnectionError if it cannot
-        connect to a server (including e.g. if this happens to get
-        run on a system with no client config at all) or RequestError
-        if the request fails in some way after 'retries' attempts,
-        waiting 'wait' seconds between retries.
+        something unusual. May raise ConnectionError or RequestError
+        if the connection or the request fail in some way after
+        'retries' attempts. 'wait' determines how long we wait between
+        retries: on the *first* retry we wait exactly 'wait' seconds,
+        on each subsequent retry the wait time is doubled, up to a
+        max of 60 seconds between attempts.
         """
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
@@ -172,20 +173,26 @@ class OpenQA_Client(object):
         # have to do it ourselves.
         try:
             resp = self.session.send(authed)
-            while not resp.ok and retries:
-                logger.debug("do_request: request failed! Retrying...")
-                retries -= 1
-                time.sleep(wait)
-                resp = self.session.send(authed)
-            if resp.ok:
-                return resp.json()
-            else:
+            if not resp.ok:
                 raise openqa_client.exceptions.RequestError(
                     request.method, resp.url, resp.status_code)
-        except requests.exceptions.ConnectionError as err:
-            raise openqa_client.exceptions.ConnectionError(err)
+            return resp.json()
+        except (requests.exceptions.ConnectionError,
+                openqa_client.exceptions.RequestError) as err:
+            if retries:
+                logger.debug(
+                    "do_request: request failed! Retrying in %s seconds...",
+                    wait)
+                logger.debug("Error: %s", err)
+                time.sleep(wait)
+                newwait = min(wait+wait, 60)
+                self.do_request(request, retries=retries-1, wait=newwait)
+            elif isinstance(err, openqa_client.exceptions.RequestError):
+                raise err
+            elif isinstance(err, requests.exceptions.ConnectionError):
+                raise openqa_client.exceptions.ConnectionError(err)
 
-    def openqa_request(self, method, path, params={}, retries=5, wait=5):
+    def openqa_request(self, method, path, params={}, retries=5, wait=10):
         """Perform a typical openQA request, with an API path and some
         optional parameters.
         """
