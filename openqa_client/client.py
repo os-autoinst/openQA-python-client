@@ -192,9 +192,11 @@ class OpenQA_Client(object):
             elif isinstance(err, requests.exceptions.ConnectionError):
                 raise openqa_client.exceptions.ConnectionError(err)
 
-    def openqa_request(self, method, path, params={}, retries=5, wait=10):
+    def openqa_request(self, method, path, params={}, retries=5, wait=10, data=None):
         """Perform a typical openQA request, with an API path and some
-        optional parameters.
+        optional parameters. Use the data parameter instead of params if you
+        need to pass lots of settings. It will post
+        application/x-www-form-urlencoded data.
         """
         # As with the reference client, we assume relative paths are
         # relative to /api/v1.
@@ -203,7 +205,7 @@ class OpenQA_Client(object):
 
         method = method.upper()
         url = '{0}{1}'.format(self.baseurl, path)
-        req = requests.Request(method=method, url=url, params=params)
+        req = requests.Request(method=method, url=url, params=params, data=data)
         return self.do_request(req, retries=retries, wait=wait)
 
     def find_clones(self, jobs):
