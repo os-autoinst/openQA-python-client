@@ -30,9 +30,9 @@ from six.moves import configparser
 import requests
 
 import openqa_client.exceptions
+import openqa_client.const as oqc
 
 logger = logging.getLogger(__name__)
-
 
 ## HELPER FUNCTIONS (may need to be split out if this gets bigger)
 
@@ -286,15 +286,15 @@ class OpenQA_Client(object):
 
     def iterate_jobs(self, jobs=None, build=None, waittime=180, delay=60, filter_dupes=True):
         """Generator function: yields lists of job dicts as they reach
-        'done' or 'cancelled' state. When all jobs are finished, the
-        generator completes. It yields list of dicts (rather than
-        single dicts) so the caller can operate on multiple jobs at
-        once (when multiple jobs are finished during single query).
-        When no jobs were finished since last query, it sleeps
-        for 'delay' seconds and then tries again, until at least one
-        job gets finished or 'waittime' timeout is reached (whereupon
-        it raises a WaitError). If 'waittime' is 0, we will query just
-        once, and return or fail immediately.
+        a completed state. When all jobs are finished, the generator
+        completes. It yields list of dicts (rather than single dicts)
+        so the caller can operate on multiple jobs at once (when
+        multiple jobs are finished during single query). When no jobs
+        were finished since last query, it sleeps for 'delay' seconds
+        and then tries again, until at least one job gets finished or
+        'waittime' timeout is reached (whereupon it raises a
+        WaitError). If 'waittime' is 0, we will query just once, and
+        return or fail immediately.
 
         Either 'jobs' or 'build' must be specified. 'jobs' should be
         iterable of job IDs (string or int). 'build' should be an
@@ -328,7 +328,7 @@ class OpenQA_Client(object):
             if filter_dupes:
                 # sub out clones
                 jobdicts = self.find_clones(jobdicts)
-            done = [jd for jd in jobdicts if jd['state'] in ('done', 'cancelled')]
+            done = [jd for jd in jobdicts if jd['state'] in oqc.JOB_FINAL_STATES]
 
             if done:
                 # yield newly-completed jobs and update the log
