@@ -234,6 +234,43 @@ class OpenQA_Client(object):
                 jobs.extend(clones)
         return jobs
 
+    def get_jobs(self, jobs=None, build=None, filter_dupes=True):
+        """Get job dicts. Either 'jobs' or 'build' must be specified.
+        'jobs' should be iterable of job IDs (string or int). 'build'
+        should be an openQA BUILD to get all the jobs for. If both are
+        specified, 'jobs' will be used and 'build' ignored. If
+        filter_dupes is True, cloned jobs will be replaced by their
+        clones (see find_clones docstring) and duplicate jobs will be
+        filtered out (see get_latest_jobs docstring).
+
+        Unlike all previous 'job get' methods in this module, this one
+        will happily return results for running jobs. All it does is
+        get the specified dicts, filter them if filter_dupes is set,
+        and return. If you only want completed jobs, filter the result
+        yourself, or just use fedmsg to make sure you only call this
+        when all the jobs you want are done.
+
+        NOTE: this deprecates iterate_jobs. The waiting and iteration
+        stuff is no longer necessary since openQA now emits fedmsgs
+        (on Fedora, at least, and I am not aware of anyone else using
+        those features).
+        """
+        if not build and not jobs:
+            raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
+        if jobs:
+            jobs = [str(j) for j in jobs]
+            # this gets all jobdicts with a single API query
+            params = {'ids': ','.join(jobs)}
+        else:
+            params = {'build': build}
+        jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
+        if filter_dupes:
+            # sub out clones
+            jobdicts = self.find_clones(jobdicts)
+            # filter dupes
+            jobdicts = get_latest_jobs(jobdicts)
+        return jobdicts
+
     def iterate_jobs(self, jobs=None, build=None, waittime=180, delay=60, filter_dupes=True):
         """Generator function: yields lists of job dicts as they reach
         'done' or 'cancelled' state. When all jobs are finished, the
