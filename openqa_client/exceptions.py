@@ -17,19 +17,23 @@
 
 """Custom exceptions used by openqa_client."""
 
-class ConnectionError(Exception):
+class OpenQAClientError(Exception):
+    """Base class for openQA client errors."""
+    pass
+
+class ConnectionError(OpenQAClientError):
     """Error raised when server connection fails. Just passed through
     requests.exceptions.ConnectionError.
     """
     pass
 
-class RequestError(Exception):
+class RequestError(OpenQAClientError):
     """Error raised when a request fails (after retries). 3-tuple of
     method, URL, and status code.
     """
     pass
 
-class WaitError(Exception):
+class WaitError(OpenQAClientError):
     """Error raised when some kind of wait has gone on too long."""
 
     def __init__(self, *args, **kwargs):
