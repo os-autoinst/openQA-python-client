@@ -58,6 +58,10 @@ def get_latest_jobs(jobs):
     only the newest job for each key - it will filter out earlier
     runs of 'the same' test for each distri/version/build included
     in the list.
+
+    This function is deprecated by upstream commit 806b5de, which
+    allows you to do this as part of the API query. 'get_jobs' now
+    does that rather than using this. It will be removed soon.
     """
     seen = list()
     newjobs = list()
@@ -252,6 +256,9 @@ class OpenQA_Client(object):
         yourself, or just use fedmsg to make sure you only call this
         when all the jobs you want are done.
 
+        This method requires the server to be at least version 4.3 to
+        work correctly.
+
         NOTE: this deprecates iterate_jobs. The waiting and iteration
         stuff is no longer necessary since openQA now emits fedmsgs
         (on Fedora, at least, and I am not aware of anyone else using
@@ -265,12 +272,16 @@ class OpenQA_Client(object):
             params = {'ids': ','.join(jobs)}
         else:
             params = {'build': build}
+        if filter_dupes:
+            params['latest'] = 'true'
         jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
         if filter_dupes:
-            # sub out clones
+            # sub out clones. when run on a BUILD this is superfluous
+            # as 'latest' will always wind up finding the latest clone
+            # but this is still useful if run on a jobs iterable and
+            # the jobs in question have clones; 'latest' doesn't help
+            # there as it only considers the jobs queried.
             jobdicts = self.find_clones(jobdicts)
-            # filter dupes
-            jobdicts = get_latest_jobs(jobdicts)
         return jobdicts
 
     def iterate_jobs(self, jobs=None, build=None, waittime=180, delay=60, filter_dupes=True):
@@ -293,10 +304,8 @@ class OpenQA_Client(object):
         clones docstring) and duplicate jobs will be filtered out (see
         get_latest_jobs docstring).
 
-        NOTE: this deprecates both wait_jobs and wait_build_jobs. They
-        will soon be removed entirely; all users should switch to this
-        function. This function requires at least openQA 4.2 on the
-        server.
+        This method requires the server to be at least version 4.3 to
+        work correctly.
         """
         if not build and not jobs:
             raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
@@ -312,13 +321,13 @@ class OpenQA_Client(object):
                 params = {'ids': ','.join(jobs)}
             else:
                 params = {'build': build}
+            if filter_dupes:
+                params['latest'] = 'true'
             jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
 
             if filter_dupes:
                 # sub out clones
                 jobdicts = self.find_clones(jobdicts)
-                # filter dupes
-                jobdicts = get_latest_jobs(jobdicts)
             done = [jd for jd in jobdicts if jd['state'] in ('done', 'cancelled')]
 
             if done:
