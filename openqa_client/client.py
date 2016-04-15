@@ -23,11 +23,11 @@ import hashlib
 import hmac
 import os
 import logging
-import requests
 import time
 
-from six.moves import configparser
 from six.moves.urllib.parse import urlparse, urlunparse
+from six.moves import configparser
+import requests
 
 import openqa_client.exceptions
 
@@ -61,12 +61,12 @@ def get_latest_jobs(jobs):
     """
     seen = list()
     newjobs = list()
-    jobs.sort(key=lambda x:x['id'], reverse=True)
+    jobs.sort(key=lambda x: x['id'], reverse=True)
     for job in jobs:
         settings = job['settings']
         key = (settings['DISTRI'], settings['VERSION'], settings['BUILD'], settings['TEST'],
                settings['FLAVOR'], settings['ARCH'], settings['MACHINE'])
-        if not key in seen:
+        if key not in seen:
             seen.append(key)
             newjobs.append(job)
     return newjobs
@@ -120,12 +120,12 @@ class OpenQA_Client(object):
         try:
             apikey = config.get(server, 'key')
             self.apisecret = config.get(server, 'secret')
-        except configparser.NoSectionError:
+        except configparser.Error:
             try:
                 apikey = config.get(self.baseurl, 'key')
                 self.apisecret = config.get(self.baseurl, 'secret')
-            except:
-                logger.debug("No API key: only GET requests will be allowed")
+            except configparser.Error:
+                logger.debug("No API key for %s: only GET requests will be allowed", server)
                 apikey = ''
                 self.apisecret = ''
 
@@ -192,12 +192,14 @@ class OpenQA_Client(object):
             elif isinstance(err, requests.exceptions.ConnectionError):
                 raise openqa_client.exceptions.ConnectionError(err)
 
-    def openqa_request(self, method, path, params={}, retries=5, wait=10, data=None):
+    def openqa_request(self, method, path, params=None, retries=5, wait=10, data=None):
         """Perform a typical openQA request, with an API path and some
         optional parameters. Use the data parameter instead of params if you
         need to pass lots of settings. It will post
         application/x-www-form-urlencoded data.
         """
+        if not params:
+            params = {}
         # As with the reference client, we assume relative paths are
         # relative to /api/v1.
         if not path.startswith('/'):
