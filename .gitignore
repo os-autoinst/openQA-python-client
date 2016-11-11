@@ -1,5 +1,6 @@
 **/*.pyc
 **/*.pyo
+build/
 dist/
 openqa_client.egg-info/
 test*.py*
