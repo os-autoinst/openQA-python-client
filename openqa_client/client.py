@@ -37,44 +37,6 @@ logger = logging.getLogger(__name__)
 ## HELPER FUNCTIONS (may need to be split out if this gets bigger)
 
 
-def get_latest_jobs(jobs):
-    """This is a job de-duping function. There is some ambiguity
-    about exactly what jobs are 'duplicates' in openQA, as it's
-    developed somewhat organically and it's not clear what is
-    convention, what is policy, what is technical limitation etc.
-    It would probably be useful if openQA itself provided more
-    capabilities here.
-
-    openQA has some code that does approximately the same thing,
-    backing the per-build 'Overview' you can get in the web UI.
-    As I write this it lives in
-    lib/OpenQA/WebAPI/Controller/Test.pm and is not externally
-    usable. It uses a 'key' made up of TEST setting, FLAVOR
-    setting, ARCH setting, and MACHINE setting. The overview is
-    for a specific combination of DISTRI, VERSION and BUILD.
-    We're going to reproduce that logic here.
-
-    Passed a list of job dicts, this will return a list containing
-    only the newest job for each key - it will filter out earlier
-    runs of 'the same' test for each distri/version/build included
-    in the list.
-
-    This function is deprecated by upstream commit 806b5de, which
-    allows you to do this as part of the API query. 'get_jobs' now
-    does that rather than using this. It will be removed soon.
-    """
-    seen = list()
-    newjobs = list()
-    jobs.sort(key=lambda x: x['id'], reverse=True)
-    for job in jobs:
-        settings = job['settings']
-        key = (settings['DISTRI'], settings['VERSION'], settings['BUILD'], settings['TEST'],
-               settings['FLAVOR'], settings['ARCH'], settings['MACHINE'])
-        if key not in seen:
-            seen.append(key)
-            newjobs.append(job)
-    return newjobs
-
 
 ## MAIN CLIENT CLASS
 
@@ -247,7 +209,7 @@ class OpenQA_Client(object):
         specified, 'jobs' will be used and 'build' ignored. If
         filter_dupes is True, cloned jobs will be replaced by their
         clones (see find_clones docstring) and duplicate jobs will be
-        filtered out (see get_latest_jobs docstring).
+        filtered out (using the upstream 'latest' query param).
 
         Unlike all previous 'job get' methods in this module, this one
         will happily return results for running jobs. All it does is
@@ -258,11 +220,6 @@ class OpenQA_Client(object):
 
         This method requires the server to be at least version 4.3 to
         work correctly.
-
-        NOTE: this deprecates iterate_jobs. The waiting and iteration
-        stuff is no longer necessary since openQA now emits fedmsgs
-        (on Fedora, at least, and I am not aware of anyone else using
-        those features).
         """
         if not build and not jobs:
             raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
@@ -283,76 +240,3 @@ class OpenQA_Client(object):
             # there as it only considers the jobs queried.
             jobdicts = self.find_clones(jobdicts)
         return jobdicts
-
-    def iterate_jobs(self, jobs=None, build=None, waittime=180, delay=60, filter_dupes=True):
-        """Generator function: yields lists of job dicts as they reach
-        a completed state. When all jobs are finished, the generator
-        completes. It yields list of dicts (rather than single dicts)
-        so the caller can operate on multiple jobs at once (when
-        multiple jobs are finished during single query). When no jobs
-        were finished since last query, it sleeps for 'delay' seconds
-        and then tries again, until at least one job gets finished or
-        'waittime' timeout is reached (whereupon it raises a
-        WaitError). If 'waittime' is 0, we will query just once, and
-        return or fail immediately.
-
-        Either 'jobs' or 'build' must be specified. 'jobs' should be
-        iterable of job IDs (string or int). 'build' should be an
-        openQA BUILD to get all the jobs for. If both are specified,
-        'jobs' will be used and 'build' ignored. If filter_dupes is
-        True, cloned jobs will be replaced by their clones (see find_
-        clones docstring) and duplicate jobs will be filtered out (see
-        get_latest_jobs docstring).
-
-        This method requires the server to be at least version 4.3 to
-        work correctly.
-        """
-        if not build and not jobs:
-            raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
-        waitstart = time.time()
-        reported = set()
-
-        if jobs:
-            jobs = [str(j) for j in jobs]
-
-        while True:
-            if jobs:
-                # this gets all jobdicts with a single API query
-                params = {'ids': ','.join(jobs)}
-            else:
-                params = {'build': build}
-            if filter_dupes:
-                params['latest'] = 'true'
-            jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
-
-            if filter_dupes:
-                # sub out clones
-                jobdicts = self.find_clones(jobdicts)
-            done = [jd for jd in jobdicts if jd['state'] in oqc.JOB_FINAL_STATES]
-
-            if done:
-                # yield newly-completed jobs and update the log
-                # of jobs we've reported
-                to_report = [jd for jd in done if jd['id'] not in reported]
-                reported.update([jd['id'] for jd in done])
-                if to_report:
-                    yield to_report
-
-            # In 'jobs' mode no jobdicts indicates a bad query, but we
-            # want to allow waiting for jobs from a build *before*
-            # they've been created, so we don't fail or return here
-            if jobdicts and len(done) >= len(jobdicts):
-                return  # return ends generator
-
-            if time.time() - waitstart > waittime * 60:
-                waiting_for = [jd['id'] for jd in jobdicts if jd['id'] not in reported]
-                raise openqa_client.exceptions.WaitError("Waited too long!",
-                                                         unfinished_jobs=waiting_for)
-            else:
-                if jobdicts:
-                    logger.debug("iterate_jobs: jobs not complete, will retry in %s seconds",
-                                 str(delay))
-                else:
-                    logger.debug("iterate_jobs: no jobs yet, will retry in %s seconds",
-                                 str(delay))
-                time.sleep(delay)
