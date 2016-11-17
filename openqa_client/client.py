@@ -34,9 +34,6 @@ import openqa_client.const as oqc
 
 logger = logging.getLogger(__name__)
 
-## HELPER FUNCTIONS (may need to be split out if this gets bigger)
-
-
 
 ## MAIN CLIENT CLASS
 
