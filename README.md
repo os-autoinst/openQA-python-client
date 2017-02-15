@@ -58,6 +58,10 @@ the `openqa_request()` method's expected pattern, you can construct a
 `requests.Request` and pass it to `do_request()`, which will attach the
 required headers, execute the request, and return the parsed JSON response.
 
+The `const` module provides several constants that are shadowed from the
+upstream openQA code, including job states, results, and the 'scenario
+keys'.
+
 ## Licensing
 
 This software is available under the GPL, version 2 or any later version.
