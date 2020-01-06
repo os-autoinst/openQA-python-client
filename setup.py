@@ -28,7 +28,7 @@ def read(fname):
 
 setup(
     name = "openqa_client",
-    version = "1.3.2",
+    version = "2.0.0",
     author = "Adam Williamson",
     author_email = "awilliam@redhat.com",
     description = "openQA client",

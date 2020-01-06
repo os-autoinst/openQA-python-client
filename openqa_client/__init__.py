@@ -20,4 +20,4 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 
-__version__ = "1.3.2"
+__version__ = "2.0.0"
