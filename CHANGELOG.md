@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2.0.1 - 2020-02-26
+
+1.  Fix long description for PyPI
+
 ### 2.0.0 - 2020-01-06
 
 1.  Update constants to reflect upstream changes again, including
