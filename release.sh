@@ -24,4 +24,5 @@ git push
 git tag -a -m "Release $version" $version
 git push origin $version
 python ./setup.py sdist --formats=tar
-xz dist/$name-$version.tar
+gzip dist/$name-$version.tar
+twine upload dist/${name}-${version}.tar.gz
