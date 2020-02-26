@@ -29,7 +29,7 @@ except ImportError:
 
 setup(
     name = "openqa_client",
-    version = "2.0.0",
+    version = "2.0.1",
     author = "Adam Williamson",
     author_email = "awilliam@redhat.com",
     description = "openQA client",
