@@ -187,7 +187,8 @@ class OpenQA_Client(object):
         while any(job['clone_id'] for job in jobs):
             toget = []
             ids = [job['id'] for job in jobs]
-            for job in jobs:
+            # copy the list to iterate over it
+            for job in list(jobs):
                 if job['clone_id']:
                     logger.debug("Replacing job %s with clone %s", job['id'], job['clone_id'])
                     if job['clone_id'] not in ids:
