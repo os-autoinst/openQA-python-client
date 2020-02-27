@@ -15,7 +15,6 @@
 #
 # Author: Adam Williamson <awilliam@redhat.com>
 
-import os
 from setuptools import setup
 
 # Get the long description from the README file
