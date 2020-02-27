@@ -25,6 +25,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name="openqa_client",
     version="2.0.1",
+    description="Python client library for openQA API",
     author="Adam Williamson",
     author_email="awilliam@redhat.com",
     description="openQA client",
@@ -33,12 +34,20 @@ setup(
     url="https://github.com/os-autoinst/openQA-python-client",
     packages=["openqa_client"],
     install_requires=['requests', 'setuptools', 'six'],
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4",
     long_description=LONGDESC,
     long_description_content_type='text/markdown',
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
         "Topic :: Utilities",
-        "License :: OSI Approved :: GNU General Public License v2 or later "
-        "(GPLv2+)",
+        "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
 )
