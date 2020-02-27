@@ -23,16 +23,16 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     LONGDESC = f.read()
 
 setup(
-    name = "openqa_client",
-    version = "2.0.1",
-    author = "Adam Williamson",
-    author_email = "awilliam@redhat.com",
-    description = "openQA client",
-    license = "GPLv2+",
-    keywords = "openqa opensuse fedora client",
-    url = "https://github.com/os-autoinst/openQA-python-client",
-    packages = ["openqa_client"],
-    install_requires = ['requests', 'setuptools', 'six'],
+    name="openqa_client",
+    version="2.0.1",
+    author="Adam Williamson",
+    author_email="awilliam@redhat.com",
+    description="openQA client",
+    license="GPLv2+",
+    keywords="openqa opensuse fedora client",
+    url="https://github.com/os-autoinst/openQA-python-client",
+    packages=["openqa_client"],
+    install_requires=['requests', 'setuptools', 'six'],
     long_description=LONGDESC,
     long_description_content_type='text/markdown',
     classifiers=[
