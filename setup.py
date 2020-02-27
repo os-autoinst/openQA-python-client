@@ -18,14 +18,9 @@
 import os
 from setuptools import setup, find_packages
 
-# From: https://github.com/pypa/pypi-legacy/issues/148
-# Produce rst-formatted long_description if pypandoc is available (to
-# look nice on pypi), otherwise just use the Markdown-formatted one
-try:
-    import pypandoc
-    LONGDESC = pypandoc.convert('README.md', 'rst')
-except ImportError:
-    LONGDESC = open('README.md').read()
+# Get the long description from the README file
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+    LONGDESC = f.read()
 
 setup(
     name = "openqa_client",
@@ -39,6 +34,7 @@ setup(
     packages = ["openqa_client"],
     install_requires = ['requests', 'setuptools', 'six'],
     long_description=LONGDESC,
+    long_description_content_type='text/markdown',
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
