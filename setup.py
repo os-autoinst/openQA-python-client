@@ -37,7 +37,7 @@ setup(
     keywords = "openqa opensuse fedora client",
     url = "https://github.com/os-autoinst/openQA-python-client",
     packages = ["openqa_client"],
-    install_requires = ['requests', 'setuptools', 'six'],
+    install_requires = ['requests', 'six'],
     long_description=LONGDESC,
     classifiers=[
         "Development Status :: 3 - Alpha",
