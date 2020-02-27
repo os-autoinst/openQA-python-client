@@ -32,10 +32,3 @@ class RequestError(OpenQAClientError):
     method, URL, and status code.
     """
     pass
-
-class WaitError(OpenQAClientError):
-    """Error raised when some kind of wait has gone on too long."""
-
-    def __init__(self, *args, **kwargs):
-        super(WaitError, self).__init__(*args)
-        self.unfinished_jobs = kwargs.get('unfinished_jobs', [])
