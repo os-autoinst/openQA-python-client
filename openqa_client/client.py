@@ -108,6 +108,8 @@ class OpenQA_Client(object):
         if not self.apisecret:
             # Can't auth without an API key.
             return request
+        # don't modify the original
+        request = request.copy()
         timestamp = time.time()
         path = request.path_url.replace('%20', '+').replace('~', '%7E')
         apihash = hmac.new(
