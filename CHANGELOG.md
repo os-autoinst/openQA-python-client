@@ -1,5 +1,10 @@
 ## Changelog
 
+### 3.0.1 - 2020-02-27
+
+1.  Drop duplicated description line in setup.py
+2.  Fix release.sh for no spaces in setup.py setup()
+
 ### 3.0.0 - 2020-02-27
 
 1.  **API**: remove `WaitError` exception
