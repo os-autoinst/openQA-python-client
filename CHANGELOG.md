@@ -1,5 +1,9 @@
 ## Changelog
 
+### 3.0.2 - 2020-02-27
+
+1.  Fix more broken stuff in setup.py
+
 ### 3.0.1 - 2020-02-27
 
 1.  Drop duplicated description line in setup.py
