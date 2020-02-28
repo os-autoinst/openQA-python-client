@@ -17,18 +17,24 @@
 
 """Custom exceptions used by openqa_client."""
 
+
 class OpenQAClientError(Exception):
     """Base class for openQA client errors."""
+
     pass
+
 
 class ConnectionError(OpenQAClientError):
     """Error raised when server connection fails. Just passed through
     requests.exceptions.ConnectionError.
     """
+
     pass
+
 
 class RequestError(OpenQAClientError):
     """Error raised when a request fails (after retries). 3-tuple of
     method, URL, and status code.
     """
+
     pass

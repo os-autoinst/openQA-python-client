@@ -42,11 +42,11 @@ class OpenQA_Client(object):
     """A client for the OpenQA REST API; just handles API auth if
     needed and provides a couple of custom methods for convenience.
     """
-    def __init__(self, server='', scheme=''):
+
+    def __init__(self, server="", scheme=""):
         # Read in config files.
         config = configparser.ConfigParser()
-        paths = ('/etc/openqa',
-                 f"{os.path.expanduser('~')}/.config/openqa")
+        paths = ("/etc/openqa", f"{os.path.expanduser('~')}/.config/openqa")
         config.read(f"{path}/client.conf" for path in paths)
 
         # If server not specified, default to the first one in the
@@ -57,9 +57,9 @@ class OpenQA_Client(object):
             try:
                 server = config.sections()[0]
             except (configparser.MissingSectionHeaderError, IndexError):
-                server = 'localhost'
+                server = "localhost"
 
-        if server.startswith('http'):
+        if server.startswith("http"):
             # Handle entries like [http://foo] or [https://foo]. The,
             # perl client does NOT handle these, so you shouldn't use
             # them. This client started out supporting this, though,
@@ -69,35 +69,35 @@ class OpenQA_Client(object):
             server = urlparse(server).netloc
 
         if not scheme:
-            if server in ('localhost', '127.0.0.1', '::1'):
+            if server in ("localhost", "127.0.0.1", "::1"):
                 # Default to non-TLS for localhost; cert is unlikely to
                 # be valid for 'localhost' and there's no MITM...
-                scheme = 'http'
+                scheme = "http"
             else:
-                scheme = 'https'
+                scheme = "https"
 
-        self.baseurl = urlunparse((scheme, server, '', '', '', ''))
+        self.baseurl = urlunparse((scheme, server, "", "", "", ""))
 
         # Get the API secrets from the config file.
         try:
-            apikey = config.get(server, 'key')
-            self.apisecret = config.get(server, 'secret')
+            apikey = config.get(server, "key")
+            self.apisecret = config.get(server, "secret")
         except configparser.Error:
             try:
-                apikey = config.get(self.baseurl, 'key')
-                self.apisecret = config.get(self.baseurl, 'secret')
+                apikey = config.get(self.baseurl, "key")
+                self.apisecret = config.get(self.baseurl, "secret")
             except configparser.Error:
                 logger.debug("No API key for %s: only GET requests will be allowed", server)
-                apikey = ''
-                self.apisecret = ''
+                apikey = ""
+                self.apisecret = ""
 
         # Create a Requests session and ensure some standard headers
         # will be used for all requests run through the session.
         self.session = requests.Session()
         headers = {}
-        headers['Accept'] = 'json'
+        headers["Accept"] = "json"
         if apikey:
-            headers['X-API-Key'] = apikey
+            headers["X-API-Key"] = apikey
         self.session.headers.update(headers)
 
     def _add_auth_headers(self, request):
@@ -110,12 +110,11 @@ class OpenQA_Client(object):
         # don't modify the original
         request = request.copy()
         timestamp = time.time()
-        path = request.path_url.replace('%20', '+').replace('~', '%7E')
-        apihash = hmac.new(
-            self.apisecret.encode(), f"{path}{timestamp}".encode(), hashlib.sha1)
+        path = request.path_url.replace("%20", "+").replace("~", "%7E")
+        apihash = hmac.new(self.apisecret.encode(), f"{path}{timestamp}".encode(), hashlib.sha1)
         headers = {}
-        headers['X-API-Microtime'] = str(timestamp).encode()
-        headers['X-API-Hash'] = apihash.hexdigest()
+        headers["X-API-Microtime"] = str(timestamp).encode()
+        headers["X-API-Hash"] = apihash.hexdigest()
         request.headers.update(headers)
         return request
 
@@ -139,18 +138,16 @@ class OpenQA_Client(object):
             resp = self.session.send(authed)
             if not resp.ok:
                 raise openqa_client.exceptions.RequestError(
-                    request.method, resp.url, resp.status_code)
+                    request.method, resp.url, resp.status_code
+                )
             return resp.json()
-        except (requests.exceptions.ConnectionError,
-                openqa_client.exceptions.RequestError) as err:
+        except (requests.exceptions.ConnectionError, openqa_client.exceptions.RequestError) as err:
             if retries:
-                logger.debug(
-                    "do_request: request failed! Retrying in %s seconds...",
-                    wait)
+                logger.debug("do_request: request failed! Retrying in %s seconds...", wait)
                 logger.debug("Error: %s", err)
                 time.sleep(wait)
-                newwait = min(wait+wait, 60)
-                return self.do_request(request, retries=retries-1, wait=newwait)
+                newwait = min(wait + wait, 60)
+                return self.do_request(request, retries=retries - 1, wait=newwait)
             elif isinstance(err, openqa_client.exceptions.RequestError):
                 raise err
             elif isinstance(err, requests.exceptions.ConnectionError):
@@ -166,7 +163,7 @@ class OpenQA_Client(object):
             params = {}
         # As with the reference client, we assume relative paths are
         # relative to /api/v1.
-        if not path.startswith('/'):
+        if not path.startswith("/"):
             path = f"/api/v1/{path}"
 
         method = method.upper()
@@ -183,21 +180,21 @@ class OpenQA_Client(object):
         be removed.
         """
         jobs = list(jobs)
-        while any(job['clone_id'] for job in jobs):
+        while any(job["clone_id"] for job in jobs):
             toget = []
-            ids = [job['id'] for job in jobs]
+            ids = [job["id"] for job in jobs]
             # copy the list to iterate over it
             for job in list(jobs):
-                if job['clone_id']:
-                    logger.debug("Replacing job %s with clone %s", job['id'], job['clone_id'])
-                    if job['clone_id'] not in ids:
-                        toget.append(str(job['clone_id']))
+                if job["clone_id"]:
+                    logger.debug("Replacing job %s with clone %s", job["id"], job["clone_id"])
+                    if job["clone_id"] not in ids:
+                        toget.append(str(job["clone_id"]))
                     jobs.remove(job)
 
             if toget:
-                toget = ','.join(toget)
+                toget = ",".join(toget)
                 # Get clones and add them to the list
-                clones = self.openqa_request('GET', 'jobs', params={'ids': toget})['jobs']
+                clones = self.openqa_request("GET", "jobs", params={"ids": toget})["jobs"]
                 jobs.extend(clones)
         return jobs
 
@@ -225,12 +222,12 @@ class OpenQA_Client(object):
         if jobs:
             jobs = [str(j) for j in jobs]
             # this gets all jobdicts with a single API query
-            params = {'ids': ','.join(jobs)}
+            params = {"ids": ",".join(jobs)}
         else:
-            params = {'build': build}
+            params = {"build": build}
         if filter_dupes:
-            params['latest'] = 'true'
-        jobdicts = self.openqa_request('GET', 'jobs', params=params)['jobs']
+            params["latest"] = "true"
+        jobdicts = self.openqa_request("GET", "jobs", params=params)["jobs"]
         if filter_dupes:
             # sub out clones. when run on a BUILD this is superfluous
             # as 'latest' will always wind up finding the latest clone
