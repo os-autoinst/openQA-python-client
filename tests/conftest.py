@@ -49,9 +49,9 @@ def _config_setup(hosts):
     for host in hosts:
         if "nokey" in host:
             # don't write a key and secret for this host
-            content.extend(["[{}]".format(host)])
+            content.extend([f"[{host}]"])
         else:
-            content.extend(["[{}]".format(host), "key = aaaaaaaaaaaaaaaa",
+            content.extend([f"[{host}]", "key = aaaaaaaaaaaaaaaa",
                             "secret = bbbbbbbbbbbbbbbb"])
     content = "\n".join(content)
     with open(confpath, 'w') as conffh:

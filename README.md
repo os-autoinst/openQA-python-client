@@ -1,7 +1,8 @@
 # openqa_client
 
 This is a client for the [openQA](https://os-autoinst.github.io/openQA/)
-API, based on [requests](https://python-requests.org).
+API, based on [requests](https://python-requests.org). It requires Python
+3.6 or later.
 
 ## Usage
 

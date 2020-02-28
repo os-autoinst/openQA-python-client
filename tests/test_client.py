@@ -58,7 +58,7 @@ class TestClient:
             scheme = ''
         else:
             scheme = 'https://'
-        assert client.baseurl == "{}{}".format(scheme, config_hosts[0])
+        assert client.baseurl == f"{scheme}{config_hosts[0]}"
         assert client.session.headers['Accept'] == 'json'
         # this should be set for all but the 'nokey' case
         if 'nokey' in config_hosts[0]:

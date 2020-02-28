@@ -46,9 +46,8 @@ class OpenQA_Client(object):
         # Read in config files.
         config = configparser.ConfigParser()
         paths = ('/etc/openqa',
-                 '{0}/.config/openqa'.format(os.path.expanduser('~')))
-        config.read('{0}/client.conf'.format(path)
-                    for path in paths)
+                 f"{os.path.expanduser('~')}/.config/openqa")
+        config.read(f"{path}/client.conf" for path in paths)
 
         # If server not specified, default to the first one in the
         # configuration file. If no configuration file, default to
@@ -113,7 +112,7 @@ class OpenQA_Client(object):
         timestamp = time.time()
         path = request.path_url.replace('%20', '+').replace('~', '%7E')
         apihash = hmac.new(
-            self.apisecret.encode(), '{0}{1}'.format(path, timestamp).encode(), hashlib.sha1)
+            self.apisecret.encode(), f"{path}{timestamp}".encode(), hashlib.sha1)
         headers = {}
         headers['X-API-Microtime'] = str(timestamp).encode()
         headers['X-API-Hash'] = apihash.hexdigest()
@@ -168,10 +167,10 @@ class OpenQA_Client(object):
         # As with the reference client, we assume relative paths are
         # relative to /api/v1.
         if not path.startswith('/'):
-            path = '/api/v1/{0}'.format(path)
+            path = f"/api/v1/{path}"
 
         method = method.upper()
-        url = '{0}{1}'.format(self.baseurl, path)
+        url = f"{self.baseurl}{path}"
         req = requests.Request(method=method, url=url, params=params, data=data)
         return self.do_request(req, retries=retries, wait=wait)
 
