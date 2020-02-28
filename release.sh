@@ -16,7 +16,7 @@ fi
 
 version=$1
 name=openqa_client
-sed -i -e "s,version = \".*\",version = \"$version\", g" setup.py
+sed -i -e "s,version=\".*\",version=\"$version\", g" setup.py
 sed -i -e "s,__version__ = \".*\",__version__ = \"${version}\", g" ${name}/__init__.py
 git add setup.py ${name}/__init__.py
 git commit -s -m "Release $version"
