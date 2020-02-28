@@ -1,5 +1,10 @@
 ## Changelog
 
+### 3.0.4 - 2020-02-27
+
+1.  OK, this time fix tests on ancient EPEL 7 for realz
+2.  Tweak py27 tox environment to match EPEL 7
+
 ### 3.0.3 - 2020-02-27
 
 1.  Fix tests to run on ancient pytest in EPEL 7 (I hope)
