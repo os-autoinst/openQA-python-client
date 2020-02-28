@@ -25,8 +25,8 @@ import os
 import logging
 import time
 
-from six.moves.urllib.parse import urlparse, urlunparse
-from six.moves import configparser
+from urllib.parse import urlparse, urlunparse
+import configparser
 import requests
 
 import openqa_client.exceptions

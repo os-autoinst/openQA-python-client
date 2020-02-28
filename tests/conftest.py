@@ -24,11 +24,7 @@
 
 import os
 import shutil
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 import pytest
 
@@ -62,7 +58,7 @@ def _config_setup(hosts):
         conffh.write(content)
     return (datadir, home)
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def config(config_hosts):
     """Create config file via _config_setup, using list of hosts
     passed in via arg (intended for parametrization). Patch
@@ -74,7 +70,7 @@ def config(config_hosts):
         yield
     _config_teardown(datadir)
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def simple_config():
     """Create config file via _config_setup, with a single host. Patch
     os.path.expanduser to return the home dir, then teardown on test
@@ -85,7 +81,7 @@ def simple_config():
         yield
     _config_teardown(datadir)
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def empty_config():
     """Create empty config file via _config_setup. Patch
     os.path.expanduser to return the home dir, then teardown on test

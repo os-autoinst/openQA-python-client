@@ -17,11 +17,6 @@
 
 from setuptools import setup
 from os import path
-# io.open is needed for projects that support Python 2.7
-# It ensures open() defaults to text mode with universal newlines,
-# and accepts an argument to specify the text encoding
-# Python 3 only projects can skip this import
-from io import open
 
 HERE = path.abspath(path.dirname(__file__))
 
@@ -40,7 +35,7 @@ setup(
     url="https://github.com/os-autoinst/openQA-python-client",
     packages=["openqa_client"],
     install_requires=open('install.requires').read().splitlines(),
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4",
+    python_requires="!=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4",
     long_description=LONGDESC,
     long_description_content_type='text/markdown',
     classifiers=[
@@ -48,8 +43,6 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Utilities",
         "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
