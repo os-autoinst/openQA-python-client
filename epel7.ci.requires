@@ -1,4 +1,0 @@
-coverage
-diff-cover
-pylint
-pytest-cov < 2.6.0

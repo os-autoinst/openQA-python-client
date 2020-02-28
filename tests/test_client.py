@@ -21,14 +21,11 @@
 
 """Tests for the main client code."""
 
+from unittest import mock
+
 import freezegun
 import pytest
 import requests
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 
 import openqa_client.client as oqc
 import openqa_client.exceptions as oqe
@@ -85,6 +82,7 @@ class TestClient:
         assert client.baseurl == "http://localhost"
         assert 'X-API-Key' not in client.session.headers
 
+    @freezegun.freeze_time("2020-02-27")
     def test_add_auth_headers(self, simple_config):
         """Test _add_auth_headers."""
         client = oqc.OpenQA_Client()
@@ -94,14 +92,9 @@ class TestClient:
         request = requests.Request(url=client.baseurl + "/api/v1/jobs ", method='GET',
                                    params=params)
         prepared = client.session.prepare_request(request)
-        # we use timestamps here, so freeze time!
-        with freezegun.freeze_time("2020-02-27"):
-            authed = client._add_auth_headers(prepared)
+        authed = client._add_auth_headers(prepared)
         assert prepared.headers != authed.headers
-        # the parameters in the request path seem to be ordered
-        # randomly on Python 2, so there are two possible hash values
-        assert authed.headers['X-API-Hash'] in ('ba843dec1b4a2dfb1d20707fa72b45e736373b33',
-                                                '05d7726f8817b7881c61201fc441fa117833bfbf')
+        assert authed.headers['X-API-Hash'] == 'ba843dec1b4a2dfb1d20707fa72b45e736373b33'
         assert authed.headers['X-API-Microtime'] == b'1582761600.0'
         # with no key/secret, request should be returned unmodified
         client = oqc.OpenQA_Client('localhost')
