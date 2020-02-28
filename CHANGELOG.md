@@ -1,5 +1,9 @@
 ## Changelog
 
+### 3.0.3 - 2020-02-27
+
+1.  Fix tests to run on ancient pytest in EPEL 7 (I hope)
+
 ### 3.0.2 - 2020-02-27
 
 1.  Fix more broken stuff in setup.py
