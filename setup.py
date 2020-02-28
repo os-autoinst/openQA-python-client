@@ -27,7 +27,6 @@ setup(
     description="Python client library for openQA API",
     author="Adam Williamson",
     author_email="awilliam@redhat.com",
-    description="openQA client",
     license="GPLv2+",
     keywords="openqa opensuse fedora client",
     url="https://github.com/os-autoinst/openQA-python-client",
