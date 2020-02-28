@@ -90,7 +90,7 @@ class TestClient:
     @freezegun.freeze_time("2020-02-27")
     # just use one config file
     @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_add_auth_headers(self, config):
+    def test_add_auth_headers(self, config, config_hosts):
         """Test _add_auth_headers."""
         client = oqc.OpenQA_Client()
         # this weird build value tests tilde substitution in hash
@@ -116,7 +116,7 @@ class TestClient:
 
     @mock.patch("requests.sessions.Session.send", autospec=True)
     @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_do_request_ok(self, fakesend, config):
+    def test_do_request_ok(self, fakesend, config, config_hosts):
         """Test do_request (normal, success case)."""
         client = oqc.OpenQA_Client()
         params = {'id': '1'}
@@ -153,7 +153,7 @@ class TestClient:
     @mock.patch("requests.sessions.Session.send", autospec=True,
                 side_effect=requests.exceptions.ConnectionError("foo"))
     @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_do_request_error(self, fakesend, fakesleep, config):
+    def test_do_request_error(self, fakesend, fakesleep, config, config_hosts):
         """Test do_request (send raises exception, custom retries)."""
         client = oqc.OpenQA_Client()
         params = {'id': '1'}
@@ -170,7 +170,7 @@ class TestClient:
 
     @mock.patch("openqa_client.client.OpenQA_Client.do_request", autospec=True)
     @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_openqa_request(self, fakedo, config):
+    def test_openqa_request(self, fakedo, config, config_hosts):
         """Test openqa_request."""
         client = oqc.OpenQA_Client()
         params = {'id': '1'}
@@ -190,7 +190,7 @@ class TestClient:
 
     @mock.patch("openqa_client.client.OpenQA_Client.openqa_request", autospec=True)
     @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_find_clones(self, fakerequest, config):
+    def test_find_clones(self, fakerequest, config, config_hosts):
         """Test find_clones."""
         client = oqc.OpenQA_Client()
         # test data: three jobs with clones, one included in the data,
@@ -268,7 +268,7 @@ class TestClient:
     @mock.patch("openqa_client.client.OpenQA_Client.find_clones", autospec=True)
     @mock.patch("openqa_client.client.OpenQA_Client.openqa_request", autospec=True)
     @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_get_jobs(self, fakerequest, fakeclones, config):
+    def test_get_jobs(self, fakerequest, fakeclones, config, config_hosts):
         """Test get_jobs."""
         client = oqc.OpenQA_Client()
         with pytest.raises(TypeError):
