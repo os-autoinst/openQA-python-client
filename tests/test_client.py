@@ -85,8 +85,6 @@ class TestClient:
         assert client.baseurl == "http://localhost"
         assert 'X-API-Key' not in client.session.headers
 
-    # we use timestamps here, so freeze time!
-    @freezegun.freeze_time("2020-02-27")
     def test_add_auth_headers(self, simple_config):
         """Test _add_auth_headers."""
         client = oqc.OpenQA_Client()
@@ -96,7 +94,9 @@ class TestClient:
         request = requests.Request(url=client.baseurl + "/api/v1/jobs ", method='GET',
                                    params=params)
         prepared = client.session.prepare_request(request)
-        authed = client._add_auth_headers(prepared)
+        # we use timestamps here, so freeze time!
+        with freezegun.freeze_time("2020-02-27"):
+            authed = client._add_auth_headers(prepared)
         assert prepared.headers != authed.headers
         # the parameters in the request path seem to be ordered
         # randomly on Python 2, so there are two possible hash values
