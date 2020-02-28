@@ -32,25 +32,25 @@ except ImportError:
 
 import pytest
 
-@pytest.yield_fixture(scope="function")
-def config(config_hosts):
+def _config_teardown(datadir):
+    if os.path.exists(datadir):
+        shutil.rmtree(datadir)
+
+def _config_setup(hosts):
     """Creates a config file in a fake user home directory, at
-    data/home/ under the tests directory. For each host in
-    config_hosts we write an entry with the same key and secret,
-    unless the host has 'nokey' in it, in which case we write an entry
-    with no key or secret. Before the test, re-create the home dir,
-    and patch os.path.expanduser to return it. After the test, delete
-    it and clean up the other bits.
+    data/home/ under the tests directory. For each host in hosts we
+    write an entry with the same key and secret, unless the host has
+    'nokey' in it, in which case we write an entry with no key or
+    secret. Before doing this, re-create the home dir.
     """
     datadir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
     home = os.path.join(datadir, 'home')
-    if os.path.exists(datadir):
-        shutil.rmtree(datadir)
+    _config_teardown(datadir)
     confpath = os.path.join(home, '.config', 'openqa')
     os.makedirs(confpath)
     confpath = os.path.join(confpath, 'client.conf')
     content = []
-    for host in config_hosts:
+    for host in hosts:
         if "nokey" in host:
             # don't write a key and secret for this host
             content.extend(["[{}]".format(host)])
@@ -60,9 +60,38 @@ def config(config_hosts):
     content = "\n".join(content)
     with open(confpath, 'w') as conffh:
         conffh.write(content)
+    return (datadir, home)
+
+@pytest.yield_fixture(scope="function")
+def config(config_hosts):
+    """Create config file via _config_setup, using list of hosts
+    passed in via arg (intended for parametrization). Patch
+    os.path.expanduser to return the home dir, then teardown on test
+    completion.
+    """
+    (datadir, home) = _config_setup(config_hosts)
     with mock.patch('os.path.expanduser', return_value=home, autospec=True):
         yield
+    _config_teardown(datadir)
 
-    # teardown stuff
-    if os.path.exists(datadir):
-        shutil.rmtree(datadir)
+@pytest.yield_fixture(scope="function")
+def simple_config():
+    """Create config file via _config_setup, with a single host. Patch
+    os.path.expanduser to return the home dir, then teardown on test
+    completion.
+    """
+    (datadir, home) = _config_setup(['openqa.fedoraproject.org'])
+    with mock.patch('os.path.expanduser', return_value=home, autospec=True):
+        yield
+    _config_teardown(datadir)
+
+@pytest.yield_fixture(scope="function")
+def empty_config():
+    """Create empty config file via _config_setup. Patch
+    os.path.expanduser to return the home dir, then teardown on test
+    completion.
+    """
+    (datadir, home) = _config_setup([])
+    with mock.patch('os.path.expanduser', return_value=home, autospec=True):
+        yield
+    _config_teardown(datadir)

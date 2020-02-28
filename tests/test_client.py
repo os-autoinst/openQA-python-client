@@ -79,8 +79,7 @@ class TestClient:
         else:
             assert 'X-API-Key' not in client.session.headers
 
-    @pytest.mark.parametrize("config_hosts", [[]])
-    def test_noconfig_host(self, config):
+    def test_noconfig_host(self, empty_config):
         """Test with empty config file (should use localhost)."""
         client = oqc.OpenQA_Client()
         assert client.baseurl == "http://localhost"
@@ -88,9 +87,7 @@ class TestClient:
 
     # we use timestamps here, so freeze time!
     @freezegun.freeze_time("2020-02-27")
-    # just use one config file
-    @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_add_auth_headers(self, config, config_hosts):
+    def test_add_auth_headers(self, simple_config):
         """Test _add_auth_headers."""
         client = oqc.OpenQA_Client()
         # this weird build value tests tilde substitution in hash
@@ -115,8 +112,7 @@ class TestClient:
         assert prepared.headers == authed.headers
 
     @mock.patch("requests.sessions.Session.send", autospec=True)
-    @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_do_request_ok(self, fakesend, config, config_hosts):
+    def test_do_request_ok(self, fakesend, simple_config):
         """Test do_request (normal, success case)."""
         client = oqc.OpenQA_Client()
         params = {'id': '1'}
@@ -132,8 +128,7 @@ class TestClient:
 
     @mock.patch("time.sleep", autospec=True)
     @mock.patch("requests.sessions.Session.send", autospec=True)
-    @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_do_request_not_ok(self, fakesend, fakesleep, config):
+    def test_do_request_not_ok(self, fakesend, fakesleep, simple_config):
         """Test do_request (response not OK, default retries)."""
         fakesend.return_value.ok = False
         client = oqc.OpenQA_Client()
@@ -152,8 +147,7 @@ class TestClient:
     @mock.patch("time.sleep", autospec=True)
     @mock.patch("requests.sessions.Session.send", autospec=True,
                 side_effect=requests.exceptions.ConnectionError("foo"))
-    @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_do_request_error(self, fakesend, fakesleep, config, config_hosts):
+    def test_do_request_error(self, fakesend, fakesleep, simple_config):
         """Test do_request (send raises exception, custom retries)."""
         client = oqc.OpenQA_Client()
         params = {'id': '1'}
@@ -169,8 +163,7 @@ class TestClient:
         assert sleeps == [5, 10]
 
     @mock.patch("openqa_client.client.OpenQA_Client.do_request", autospec=True)
-    @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_openqa_request(self, fakedo, config, config_hosts):
+    def test_openqa_request(self, fakedo, simple_config):
         """Test openqa_request."""
         client = oqc.OpenQA_Client()
         params = {'id': '1'}
@@ -189,8 +182,7 @@ class TestClient:
         assert fakedo.call_args[1]['wait'] == 5
 
     @mock.patch("openqa_client.client.OpenQA_Client.openqa_request", autospec=True)
-    @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_find_clones(self, fakerequest, config, config_hosts):
+    def test_find_clones(self, fakerequest, simple_config):
         """Test find_clones."""
         client = oqc.OpenQA_Client()
         # test data: three jobs with clones, one included in the data,
@@ -267,8 +259,7 @@ class TestClient:
 
     @mock.patch("openqa_client.client.OpenQA_Client.find_clones", autospec=True)
     @mock.patch("openqa_client.client.OpenQA_Client.openqa_request", autospec=True)
-    @pytest.mark.parametrize("config_hosts", [["openqa.fedoraproject.org"]])
-    def test_get_jobs(self, fakerequest, fakeclones, config, config_hosts):
+    def test_get_jobs(self, fakerequest, fakeclones, simple_config):
         """Test get_jobs."""
         client = oqc.OpenQA_Client()
         with pytest.raises(TypeError):
