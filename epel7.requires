@@ -1,0 +1,7 @@
+# this should really be 0.1.19, but:
+# https://github.com/spulec/freezegun/issues/338
+freezegun == 0.2.3
+requests == 2.6.0
+six == 1.9.0
+mock == 1.0.1
+pytest == 2.7.0
