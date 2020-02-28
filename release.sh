@@ -2,8 +2,8 @@
 
 baddeps=""
 # check deps
-rpm -qi python2-setuptools > /dev/null 2>&1 || baddeps="python2-setuptools"
-rpm -qi python2-setuptools_git > /dev/null 2>&1 || baddeps="${baddeps} python2-setuptools_git"
+rpm -qi python3-setuptools > /dev/null 2>&1 || baddeps="python2-setuptools"
+rpm -qi python3-setuptools_git > /dev/null 2>&1 || baddeps="${baddeps} python2-setuptools_git"
 if [ -n "${baddeps}" ]; then
     echo "${baddeps} must be installed!"
     exit 1
@@ -23,6 +23,6 @@ git commit -s -m "Release $version"
 git push
 git tag -a -m "Release $version" $version
 git push origin $version
-python ./setup.py sdist --formats=tar
+python3 ./setup.py sdist --formats=tar
 gzip dist/$name-$version.tar
 twine upload dist/${name}-${version}.tar.gz
