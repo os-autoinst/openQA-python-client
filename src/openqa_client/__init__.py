@@ -17,4 +17,4 @@
 
 """Python client library for openQA."""
 
-__version__ = "4.0.0.dev0"
+__version__ = "4.0.0"
