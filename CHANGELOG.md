@@ -1,5 +1,19 @@
 ## Changelog
 
+### 4.0.0 - 2020-02-28
+
+1.  Drop Python 2 support, remove various Python 2-specific workarounds
+2.  Move module source under `src/`
+3.  Make tox build and test an sdist, not test the working directory
+4.  Run [black](https://github.com/psf/black) on the source, add it to CI
+5.  Add `pyproject.toml` compliant with PEP-517 and PEP-518
+6.  Update `release.sh` to use `pep517`
+
+This is a modernization release to drop Python 2 support and align with various shiny modern
+Best Practices. There should be no actual functional changes to the code at all, but I'm gonna
+call it 4.0.0 due to the dropping of Python 2 support and the code being moved within the
+git repo, which may disrupt some folks.
+
 ### 3.0.4 - 2020-02-27
 
 1.  OK, this time fix tests on ancient EPEL 7 for realz
