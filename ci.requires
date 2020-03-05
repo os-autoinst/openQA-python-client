@@ -2,3 +2,4 @@ black
 coverage
 diff-cover
 pylint
+toml
