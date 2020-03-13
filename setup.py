@@ -26,7 +26,7 @@ with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="openqa_client",
-    version="4.0.0",
+    version="4.1.0",
     description="Python client library for openQA API",
     author="Adam Williamson",
     author_email="awilliam@redhat.com",
