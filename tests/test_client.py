@@ -120,6 +120,30 @@ class TestClient:
         assert "X-API-Microtime" in fakesend.call_args[0][1].headers
         # check URL looks right
         assert fakesend.call_args[0][1].url == "https://openqa.fedoraproject.org/api/v1/jobs?id=1"
+        # check we called .json() on the response
+        fakeresp = fakesend.return_value
+        assert len(fakeresp.method_calls) == 1
+        (callname, callargs, callkwargs) = fakeresp.method_calls[0]
+        assert callname == "json"
+        assert not callargs
+        assert not callkwargs
+
+    @mock.patch("requests.sessions.Session.send", autospec=True)
+    def test_do_request_ok_no_parse(self, fakesend, simple_config):
+        """Test do_request (normal, success case, with parse=False)."""
+        client = oqc.OpenQA_Client()
+        params = {"id": "1"}
+        request = requests.Request(url=client.baseurl + "/api/v1/jobs", method="GET", params=params)
+        client.do_request(request, parse=False)
+        # check request was authed. Note: [0][0] is self
+        assert "X-API-Key" in fakesend.call_args[0][1].headers
+        assert "X-API-Hash" in fakesend.call_args[0][1].headers
+        assert "X-API-Microtime" in fakesend.call_args[0][1].headers
+        # check URL looks right
+        assert fakesend.call_args[0][1].url == "https://openqa.fedoraproject.org/api/v1/jobs?id=1"
+        # check we did not call .json() (or anything else) on response
+        fakeresp = fakesend.return_value
+        assert len(fakeresp.method_calls) == 0
 
     @mock.patch("time.sleep", autospec=True)
     @mock.patch("requests.sessions.Session.send", autospec=True)
