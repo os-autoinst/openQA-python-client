@@ -110,6 +110,10 @@ class TestClient:
     @mock.patch("requests.sessions.Session.send", autospec=True)
     def test_do_request_ok(self, fakesend, simple_config):
         """Test do_request (normal, success case)."""
+        # we have to set up a proper headers dict or mock gets lost in
+        # infinite recursion and eats all our RAM...
+        fakeresp = fakesend.return_value
+        fakeresp.headers = {"content-type": "text/json,encoding=utf-8"}
         client = oqc.OpenQA_Client()
         params = {"id": "1"}
         request = requests.Request(url=client.baseurl + "/api/v1/jobs", method="GET", params=params)
@@ -144,6 +148,24 @@ class TestClient:
         # check we did not call .json() (or anything else) on response
         fakeresp = fakesend.return_value
         assert len(fakeresp.method_calls) == 0
+
+    @mock.patch("requests.sessions.Session.send", autospec=True)
+    def test_do_request_ok_yaml(self, fakesend, simple_config):
+        """Test do_request (with YAML response)."""
+        # set up the response to return YAML and correct
+        # content-type header
+        fakeresp = fakesend.return_value
+        fakeresp.headers = {"content-type": "text/yaml,encoding=utf-8"}
+        fakeresp.text = "defaults:\n  arm:\n    machine: ARM"
+        client = oqc.OpenQA_Client()
+        request = requests.Request(
+            url=client.baseurl + "/api/v1/job_templates_scheduling/1", method="GET"
+        )
+        ret = client.do_request(request)
+        # check we did not call .json() on response
+        assert len(fakeresp.method_calls) == 0
+        # check we parsed the response
+        assert ret == {"defaults": {"arm": {"machine": "ARM"}}}
 
     @mock.patch("time.sleep", autospec=True)
     @mock.patch("requests.sessions.Session.send", autospec=True)

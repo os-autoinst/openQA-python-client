@@ -28,6 +28,7 @@ import time
 from urllib.parse import urlparse, urlunparse
 import configparser
 import requests
+import yaml
 
 import openqa_client.exceptions
 import openqa_client.const as oqc
@@ -144,6 +145,13 @@ class OpenQA_Client(object):
                 )
             if not parse:
                 return resp
+            # check if the server sent us YAML when we asked for JSON
+            contype = resp.headers.get("content-type", "")
+            if contype.startswith("text/yaml"):
+                # FullLoader should also be fine as we trust the devs,
+                # but I doubt they're gonna put anything beyond
+                # SafeLoader's capacity in the responses
+                return yaml.load(resp.text, Loader=yaml.SafeLoader)
             return resp.json()
         except (requests.exceptions.ConnectionError, openqa_client.exceptions.RequestError) as err:
             if retries:
