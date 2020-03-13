@@ -118,10 +118,12 @@ class OpenQA_Client(object):
         request.headers.update(headers)
         return request
 
-    def do_request(self, request, retries=5, wait=10):
+    def do_request(self, request, retries=5, wait=10, parse=True):
         """Passed a requests.Request, prepare it with the necessary
-        headers, submit it, and return the JSON output. You can use
-        this directly instead of openqa_request() if you need to do
+        headers, submit it, and return the parsed output (unless parse
+        raw is False, in which case return the response for the
+        caller to do whatever it likes with). You can use this
+        directly instead of openqa_request() if you need to do
         something unusual. May raise ConnectionError or RequestError
         if the connection or the request fail in some way after
         'retries' attempts. 'wait' determines how long we wait between
@@ -140,6 +142,8 @@ class OpenQA_Client(object):
                 raise openqa_client.exceptions.RequestError(
                     request.method, resp.url, resp.status_code
                 )
+            if not parse:
+                return resp
             return resp.json()
         except (requests.exceptions.ConnectionError, openqa_client.exceptions.RequestError) as err:
             if retries:
