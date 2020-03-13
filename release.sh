@@ -23,4 +23,4 @@ git push
 git tag -a -m "Release $version" $version
 git push origin $version
 python3 -m pep517.build .
-twine upload dist/${name}-${version}*
+twine upload -r pypi dist/${name}-${version}*
