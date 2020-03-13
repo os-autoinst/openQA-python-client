@@ -1,5 +1,13 @@
 ## Changelog
 
+### 4.1.0 - 2020-03-13
+
+1.  Handle server sending us YAML (though we didn't ask for it)
+2.  Add `parse` kwarg to `do_request` to allow skipping parsing
+
+This adds a dependency on pyyaml, unfortunately; can't see any way around that short of
+just not parsing these responses at all.
+
 ### 4.0.0 - 2020-02-28
 
 1.  Drop Python 2 support, remove various Python 2-specific workarounds
