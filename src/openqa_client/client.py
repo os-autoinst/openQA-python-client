@@ -122,15 +122,15 @@ class OpenQA_Client(object):
     def do_request(self, request, retries=5, wait=10, parse=True):
         """Passed a requests.Request, prepare it with the necessary
         headers, submit it, and return the parsed output (unless parse
-        raw is False, in which case return the response for the
-        caller to do whatever it likes with). You can use this
-        directly instead of openqa_request() if you need to do
-        something unusual. May raise ConnectionError or RequestError
-        if the connection or the request fail in some way after
-        'retries' attempts. 'wait' determines how long we wait between
-        retries: on the *first* retry we wait exactly 'wait' seconds,
-        on each subsequent retry the wait time is doubled, up to a
-        max of 60 seconds between attempts.
+        is False, in which case return the response for the caller to
+        do whatever it likes with). You can use this directly instead
+        of openqa_request() if you need to do something unusual. May
+        raise ConnectionError or RequestError if the connection or the
+        request fail in some way after 'retries' attempts. 'wait'
+        determines how long we wait between retries: on the *first*
+        retry we wait exactly 'wait' seconds, on each subsequent retry
+        the wait time is doubled, up to a max of 60 seconds between
+        attempts.
         """
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
