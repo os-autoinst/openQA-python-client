@@ -88,7 +88,7 @@ class TestClient:
         """Test _add_auth_headers."""
         client = oqc.OpenQA_Client()
         # this weird build value tests tilde substitution in hash
-        params = {"build": "foo~", "latest": "true"}
+        params = {"build": "foo~", "latest": "1"}
         # this (incorrect) URL tests space substitution in hash
         request = requests.Request(
             url=client.baseurl + "/api/v1/jobs ", method="GET", params=params
@@ -96,7 +96,7 @@ class TestClient:
         prepared = client.session.prepare_request(request)
         authed = client._add_auth_headers(prepared)
         assert prepared.headers != authed.headers
-        assert authed.headers["X-API-Hash"] == "ba843dec1b4a2dfb1d20707fa72b45e736373b33"
+        assert authed.headers["X-API-Hash"] == "71373f0a57118b120d1915ccc0a24ae2cc112ad3"
         assert authed.headers["X-API-Microtime"] == b"1582761600.0"
         # with no key/secret, request should be returned unmodified
         client = oqc.OpenQA_Client("localhost")
@@ -264,7 +264,7 @@ class TestClient:
         client.get_jobs(jobs=[1, 2])
         assert fakerequest.call_args[0][1] == "GET"
         assert fakerequest.call_args[0][2] == "jobs"
-        assert fakerequest.call_args[1]["params"] == {"ids": "1,2", "latest": "true"}
+        assert fakerequest.call_args[1]["params"] == {"ids": "1,2", "latest": "1"}
         assert fakeclones.call_count == 1
         client.get_jobs(build="foo", filter_dupes=False)
         assert fakerequest.call_args[0][1] == "GET"

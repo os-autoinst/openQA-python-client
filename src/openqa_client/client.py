@@ -238,7 +238,7 @@ class OpenQA_Client(object):
         else:
             params = {"build": build}
         if filter_dupes:
-            params["latest"] = "true"
+            params["latest"] = "1"
         jobdicts = self.openqa_request("GET", "jobs", params=params)["jobs"]
         if filter_dupes:
             # sub out clones. when run on a BUILD this is superfluous
