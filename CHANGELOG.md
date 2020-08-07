@@ -1,5 +1,9 @@
 ## Changelog
 
+### 4.1.1 - 2020-08-07
+
+1.  Fix `latest` param when querying jobs to use value `1` not `true`
+
 ### 4.1.0 - 2020-03-13
 
 1.  Handle server sending us YAML (though we didn't ask for it)
