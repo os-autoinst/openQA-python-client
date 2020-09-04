@@ -19,19 +19,19 @@
 
 """Main client functionality."""
 
+import configparser
 import hashlib
 import hmac
-import os
 import logging
 import time
-
+from pathlib import Path
 from urllib.parse import urlparse, urlunparse
-import configparser
+
 import requests
 import yaml
 
+import openqa_client.const as oqc  # noqa
 import openqa_client.exceptions
-import openqa_client.const as oqc
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,8 @@ class OpenQA_Client(object):
     def __init__(self, server="", scheme=""):
         # Read in config files.
         config = configparser.ConfigParser()
-        paths = ("/etc/openqa", f"{os.path.expanduser('~')}/.config/openqa")
-        config.read(f"{path}/client.conf" for path in paths)
+        paths = (Path("/etc/openqa"), Path("~/.config/openqa").expanduser())
+        config.read(path / "client.conf" for path in paths)
 
         # If server not specified, default to the first one in the
         # configuration file. If no configuration file, default to
