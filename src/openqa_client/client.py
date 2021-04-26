@@ -31,7 +31,6 @@ import requests
 import yaml
 
 import openqa_client.exceptions
-import openqa_client.const as oqc
 
 logger = logging.getLogger(__name__)
 
