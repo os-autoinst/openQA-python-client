@@ -24,6 +24,8 @@ import hmac
 import os
 import logging
 import time
+import sys
+from typing import Any, Dict, List, MutableMapping, NoReturn, Optional, Union, overload
 
 from urllib.parse import urlparse, urlunparse
 import configparser
@@ -32,7 +34,27 @@ import yaml
 
 import openqa_client.exceptions
 
+if sys.version_info >= (3, 8):
+    from typing import Literal, TypedDict
+else:  # pragma: no cover
+    from typing_extensions import Literal, TypedDict  # pragma: no cover
+
+
 logger = logging.getLogger(__name__)
+
+
+RequestMethod = Literal["get", "put", "post", "delete", "GET", "PUT", "POST", "DELETE"]
+
+
+class Job(TypedDict):
+    """Response from openQA about a job."""
+
+    #: settings of this job as reported in the webui
+    settings: Dict[str, str]
+    #: this jobs unique identifier
+    id: int
+    #: the unique identifier of the job as which this job has been cloned
+    clone_id: int
 
 
 ## MAIN CLIENT CLASS
@@ -56,7 +78,9 @@ class OpenQA_Client:
               takes precedence over this.
     """
 
-    def __init__(self, server="", scheme="", retries=5, wait=10):
+    def __init__(
+        self, server: str = "", scheme: str = "", retries: int = 5, wait: int = 10
+    ) -> None:
         self.retries = retries
         self.wait = wait
         # Read in config files.
@@ -108,14 +132,14 @@ class OpenQA_Client:
 
         # Create a Requests session and ensure some standard headers
         # will be used for all requests run through the session.
-        self.session = requests.Session()
+        self.session: requests.Session = requests.Session()
         headers = {}
         headers["Accept"] = "json"
         if apikey:
             headers["X-API-Key"] = apikey
         self.session.headers.update(headers)
 
-    def _add_auth_headers(self, request):
+    def _add_auth_headers(self, request: requests.PreparedRequest) -> requests.PreparedRequest:
         """Add authentication headers to a PreparedRequest. See
         openQA/lib/OpenQA/client.pm for the authentication design.
         """
@@ -127,13 +151,39 @@ class OpenQA_Client:
         timestamp = time.time()
         path = request.path_url.replace("%20", "+").replace("~", "%7E")
         apihash = hmac.new(self.apisecret.encode(), f"{path}{timestamp}".encode(), hashlib.sha1)
-        headers = {}
+        headers: MutableMapping[str, str] = {}
         headers["X-API-Microtime"] = str(timestamp).encode()
         headers["X-API-Hash"] = apihash.hexdigest()
         request.headers.update(headers)
         return request
 
-    def do_request(self, request, retries=None, wait=None, parse=True):
+    @overload
+    def do_request(
+        self,
+        request: requests.Request,
+        retries: Optional[int] = None,
+        wait: Optional[Union[int, float]] = None,
+        parse: Literal[False] = False,
+    ) -> requests.Response:
+        ...  # pragma: no cover
+
+    @overload
+    def do_request(
+        self,
+        request: requests.Request,
+        retries: Optional[int] = None,
+        wait: Optional[Union[int, float]] = None,
+        parse: Literal[True] = True,
+    ) -> Any:
+        ...  # pragma: no cover
+
+    def do_request(
+        self,
+        request: requests.Request,
+        retries: Optional[int] = None,
+        wait: Optional[Union[int, float]] = None,
+        parse: bool = True,
+    ) -> Union[Any, requests.Response]:
         """Passed a requests.Request, prepare it with the necessary
         headers, submit it, and return the parsed output (unless parse
         is False, in which case return the response for the caller to
@@ -188,7 +238,15 @@ class OpenQA_Client:
                 raise openqa_client.exceptions.ConnectionError(err)
             assert False, "This code path must be unreachable"
 
-    def openqa_request(self, method, path, params=None, retries=None, wait=None, data=None):
+    def openqa_request(
+        self,
+        method: RequestMethod,
+        path: str,
+        params: Any = None,
+        retries: Optional[int] = None,
+        wait: Optional[int] = None,
+        data: Any = None,
+    ):
         """Perform a typical openQA request, with an API path and some
         optional parameters. Use the data parameter instead of params if you
         need to pass lots of settings. It will post
@@ -233,12 +291,11 @@ class OpenQA_Client:
         if not path.startswith("/"):
             path = f"/api/v1/{path}"
 
-        method = method.upper()
         url = f"{self.baseurl}{path}"
-        req = requests.Request(method=method, url=url, params=params, data=data)
-        return self.do_request(req, retries=retries, wait=wait)
+        req = requests.Request(method=method.upper(), url=url, params=params, data=data)
+        return self.do_request(req, retries=retries, wait=wait, parse=True)
 
-    def find_clones(self, jobs):
+    def find_clones(self, jobs: List[Job]) -> List[Job]:
         """Given an iterable of job dicts, this will see if any of the
         jobs were cloned, and replace any that were cloned with the dicts
         of their clones, returning a list. It recurses - so if 3 was
@@ -259,13 +316,27 @@ class OpenQA_Client:
                     jobs.remove(job)
 
             if toget:
-                toget = ",".join(toget)
                 # Get clones and add them to the list
-                clones = self.openqa_request("GET", "jobs", params={"ids": toget})["jobs"]
+                clones = self.openqa_request("GET", "jobs", params={"ids": ",".join(toget)})["jobs"]
                 jobs.extend(clones)
         return jobs
 
-    def get_jobs(self, jobs=None, build=None, filter_dupes=True):
+    @overload
+    def get_jobs(self, jobs: Literal[None], build: Literal[None], filter_dupes: bool) -> NoReturn:
+        ...  # pragma: no cover
+
+    @overload
+    def get_jobs(
+        self, jobs: Optional[List[Union[str, int]]], build: Optional[str], filter_dupes: bool
+    ):
+        ...  # pragma: no cover
+
+    def get_jobs(
+        self,
+        jobs: Optional[List[Union[str, int]]] = None,
+        build: Optional[str] = None,
+        filter_dupes: bool = True,
+    ):
         """Get job dicts. Either 'jobs' or 'build' must be specified.
         'jobs' should be iterable of job IDs (string or int). 'build'
         should be an openQA BUILD to get all the jobs for. If both are
@@ -287,10 +358,10 @@ class OpenQA_Client:
         if not build and not jobs:
             raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
         if jobs:
-            jobs = [str(j) for j in jobs]
             # this gets all jobdicts with a single API query
-            params = {"ids": ",".join(jobs)}
+            params = {"ids": ",".join(str(j) for j in jobs)}
         else:
+            assert build is not None
             params = {"build": build}
         if filter_dupes:
             params["latest"] = "1"
