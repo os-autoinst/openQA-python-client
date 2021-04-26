@@ -167,6 +167,20 @@ class TestClient:
         # check we parsed the response
         assert ret == {"defaults": {"arm": {"machine": "ARM"}}}
 
+    @mock.patch("requests.sessions.Session.send", autospec=True)
+    def test_do_request_not_changed(self, fakesend, simple_config):
+        """Test do_request when receiving a 204 Not Changed reply"""
+        fakeresp = fakesend.return_value
+        fakeresp.status_code = 204
+        fakeresp.text = ""
+        client = oqc.OpenQA_Client()
+        request = requests.Request(
+            url=client.baseurl + "/api/v1/job_templates_scheduling/1", method="PUT"
+        )
+        ret = client.do_request(request)
+        assert len(fakeresp.method_calls) == 0, "no methods must be called on response"
+        assert ret == fakesend.return_value, "do_request should have returned the response itself"
+
     @mock.patch("time.sleep", autospec=True)
     @mock.patch("requests.sessions.Session.send", autospec=True)
     def test_do_request_not_ok(self, fakesend, fakesleep, simple_config):
@@ -222,6 +236,43 @@ class TestClient:
         assert fakedo.call_args[0][1].params == {}
         assert fakedo.call_args[1]["retries"] == 2
         assert fakedo.call_args[1]["wait"] == 5
+
+    @mock.patch("openqa_client.client.OpenQA_Client.do_request", autospec=True)
+    def test_openqa_request_settings_addition(self, fakedo, simple_config):
+        """Test openqa_request's handling of the 'settings' parameter."""
+        client = oqc.OpenQA_Client()
+        test_suite_params = {
+            "id": "1",
+            "name": "some_suite",
+            "settings": [
+                {
+                    "key": "PUBLISH_HDD_1",
+                    "value": "%DISTRI%-%VERSION%-%ARCH%-%BUILD%.qcow2",
+                },
+                {"key": "START_AFTER_TEST", "value": "fedora_rawhide_qcow2"},
+            ],
+        }
+        client.openqa_request("POST", "test_suites", params=test_suite_params)
+        # check we called do_request right. Note: [0][0] is self
+        assert fakedo.call_args[0][1].url == "https://openqa.fedoraproject.org/api/v1/test_suites"
+        assert fakedo.call_args[0][1].params == {
+            "id": "1",
+            "name": "some_suite",
+            "settings[PUBLISH_HDD_1]": "%DISTRI%-%VERSION%-%ARCH%-%BUILD%.qcow2",
+            "settings[START_AFTER_TEST]": "fedora_rawhide_qcow2",
+        }
+        # check requests with a string payload
+        fakedo.reset_mock()
+        client.openqa_request("put", "test_suites", data="settings")
+        assert fakedo.call_args[0][1].params == {}
+        assert fakedo.call_args[0][1].data == "settings"
+
+    @mock.patch("openqa_client.client.OpenQA_Client.do_request", autospec=True)
+    def test_not_prepend_api_route(self, fakedo, simple_config):
+        """Test openqa_request not prepending the /api/v1 string for absolute routes."""
+        client = oqc.OpenQA_Client()
+        client.openqa_request("GET", "/absolute_url")
+        assert fakedo.call_args[0][1].url == "https://openqa.fedoraproject.org/absolute_url"
 
     @mock.patch("openqa_client.client.OpenQA_Client.openqa_request", autospec=True)
     def test_find_clones(self, fakerequest, simple_config):

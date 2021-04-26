@@ -169,9 +169,41 @@ class OpenQA_Client(object):
         optional parameters. Use the data parameter instead of params if you
         need to pass lots of settings. It will post
         application/x-www-form-urlencoded data.
+
+        If either params or data is a dictionary and contains the key "settings"
+        (which is a list of dictionaries), then the entries of "settings"
+        converted as follows before being sent:
+        params = {
+            "name": "something",
+            "settings": [{"key": "varname", "value": "var_value"}]
+        }
+        becomes:
+        params = {
+            "name": "something",
+            "settings[varname]": "var_value"
+        }
         """
         if not params:
             params = {}
+
+        # we have to work around a limitation in the API: when modifying job
+        # groups, products, etc. that take a settings parameter, then this
+        # settings parameter gets returned to us as a list like this:
+        # [{"key": "varname", "value": "var_value"}]
+        # But when we sent the reply back, we must send these settings in the
+        # "top level" payload object like this:
+        # "settings[varname]": "var_value"
+        for payload in (params, data):
+            if (
+                payload is not None
+                and isinstance(payload, dict)
+                and "settings" in payload
+                and isinstance(payload["settings"], list)
+            ):
+                settings = payload.pop("settings")
+                for setting in settings:
+                    payload[f"settings[{setting.get('key')}]"] = setting["value"]
+
         # As with the reference client, we assume relative paths are
         # relative to /api/v1.
         if not path.startswith("/"):
