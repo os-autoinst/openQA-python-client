@@ -1,2 +1,5 @@
 freezegun
 pytest
+mypy
+types-requests
+types-PyYAML
