@@ -142,7 +142,7 @@ class OpenQA_Client(object):
                 raise openqa_client.exceptions.RequestError(
                     request.method, resp.url, resp.status_code
                 )
-            if not parse:
+            if not parse or resp.status_code == 204:
                 return resp
             # check if the server sent us YAML when we asked for JSON
             contype = resp.headers.get("content-type", "")
