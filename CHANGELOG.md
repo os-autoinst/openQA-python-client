@@ -1,5 +1,9 @@
 ## Changelog
 
+### 4.1.2 - 2021-04-27
+
+1.  Improve handling of quirky API behaviour regarding settings parameters
+
 ### 4.1.1 - 2020-08-07
 
 1.  Fix `latest` param when querying jobs to use value `1` not `true`
