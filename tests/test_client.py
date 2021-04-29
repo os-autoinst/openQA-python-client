@@ -237,6 +237,38 @@ class TestClient:
         assert fakedo.call_args[1]["retries"] == 2
         assert fakedo.call_args[1]["wait"] == 5
 
+    @mock.patch("time.sleep", autospec=True)
+    @mock.patch(
+        "requests.sessions.Session.send",
+        autospec=True,
+        side_effect=requests.exceptions.ConnectionError("foo"),
+    )
+    def test_openqa_request_retries(self, fakesend, fakesleep, simple_config):
+        """Test the handling of wait & retries when using openqa_request."""
+        client = oqc.OpenQA_Client(retries=3)
+
+        with pytest.raises(oqe.ConnectionError):
+            client.openqa_request("get", "jobs", wait=42)
+
+        assert fakesend.call_count == 4, "expected the class global retries to be used"
+        assert fakesleep.call_count == 3
+        sleeps = [call[0][0] for call in fakesleep.call_args_list]
+        # sleep time is capped at 60s
+        assert sleeps == [42, 60, 60]
+
+        fakesend.reset_mock()
+        fakesleep.reset_mock()
+
+        with pytest.raises(oqe.ConnectionError):
+            client.openqa_request("get", "jobs", retries=1)
+
+        assert (
+            fakesend.call_count == 2
+        ), "expected the retries value from the method to take precedence"
+        assert fakesleep.call_count == 1
+        sleeps = [call[0][0] for call in fakesleep.call_args_list]
+        assert sleeps == [10], "expected class default for wait to be used"
+
     @mock.patch("openqa_client.client.OpenQA_Client.do_request", autospec=True)
     def test_openqa_request_settings_addition(self, fakedo, simple_config):
         """Test openqa_request's handling of the 'settings' parameter."""

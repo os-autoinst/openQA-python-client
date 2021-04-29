@@ -41,9 +41,24 @@ logger = logging.getLogger(__name__)
 class OpenQA_Client:
     """A client for the OpenQA REST API; just handles API auth if
     needed and provides a couple of custom methods for convenience.
+
+    Args:
+        server: The URL or hostname of the openqa server.
+                If not provided, will default to the first server in openqa's
+                config files or localhost if none are present.
+        scheme: The scheme used by the server.
+                Extracted from the hostname by default.
+        retries: A default value for the number of retries that will be
+                 performed per request. This value is used if retries is not
+                 provided to the respective method calls.
+        wait: A default value for the time to wait between attempted requests
+              in seconds. The value provided to the respective method calls
+              takes precedence over this.
     """
 
-    def __init__(self, server="", scheme=""):
+    def __init__(self, server="", scheme="", retries=5, wait=10):
+        self.retries = retries
+        self.wait = wait
         # Read in config files.
         config = configparser.ConfigParser()
         paths = ("/etc/openqa", f"{os.path.expanduser('~')}/.config/openqa")
@@ -118,7 +133,7 @@ class OpenQA_Client:
         request.headers.update(headers)
         return request
 
-    def do_request(self, request, retries=5, wait=10, parse=True):
+    def do_request(self, request, retries=None, wait=None, parse=True):
         """Passed a requests.Request, prepare it with the necessary
         headers, submit it, and return the parsed output (unless parse
         is False, in which case return the response for the caller to
@@ -130,9 +145,17 @@ class OpenQA_Client:
         retry we wait exactly 'wait' seconds, on each subsequent retry
         the wait time is doubled, up to a max of 60 seconds between
         attempts.
+
+        If wait or retries are None, then the global values of this class are
+        used or the defaults apply.
         """
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
+
+        if retries is None:
+            retries = self.retries
+        if wait is None:
+            wait = self.wait
         # We can't use the nice urllib3 Retry stuff, because openSUSE
         # 13.2 has a sadly outdated version of python-requests. We'll
         # have to do it ourselves.
@@ -163,8 +186,9 @@ class OpenQA_Client:
                 raise err
             elif isinstance(err, requests.exceptions.ConnectionError):
                 raise openqa_client.exceptions.ConnectionError(err)
+            assert False, "This code path must be unreachable"
 
-    def openqa_request(self, method, path, params=None, retries=5, wait=10, data=None):
+    def openqa_request(self, method, path, params=None, retries=None, wait=None, data=None):
         """Perform a typical openQA request, with an API path and some
         optional parameters. Use the data parameter instead of params if you
         need to pass lots of settings. It will post
