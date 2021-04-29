@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 ## MAIN CLIENT CLASS
 
 
-class OpenQA_Client(object):
+class OpenQA_Client:
     """A client for the OpenQA REST API; just handles API auth if
     needed and provides a couple of custom methods for convenience.
     """
