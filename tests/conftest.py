@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Red Hat
+# Copyright Red Hat
 #
 # This file is part of openQA-python-client.
 #
