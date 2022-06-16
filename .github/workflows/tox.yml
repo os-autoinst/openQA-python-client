@@ -1,3 +1,4 @@
+---
 name: Python package with Tox
 
 on: [pull_request]
