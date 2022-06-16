@@ -232,9 +232,9 @@ class OpenQA_Client:
                 time.sleep(wait)
                 newwait = min(wait + wait, 60)
                 return self.do_request(request, retries=retries - 1, wait=newwait)
-            elif isinstance(err, openqa_client.exceptions.RequestError):
+            if isinstance(err, openqa_client.exceptions.RequestError):
                 raise err
-            elif isinstance(err, requests.exceptions.ConnectionError):
+            if isinstance(err, requests.exceptions.ConnectionError):
                 raise openqa_client.exceptions.ConnectionError(err)
             assert False, "This code path must be unreachable"
 
