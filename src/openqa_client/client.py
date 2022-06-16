@@ -152,7 +152,7 @@ class OpenQA_Client:
         path = request.path_url.replace("%20", "+").replace("~", "%7E")
         apihash = hmac.new(self.apisecret.encode(), f"{path}{timestamp}".encode(), hashlib.sha1)
         headers: MutableMapping[str, str] = {}
-        headers["X-API-Microtime"] = str(timestamp).encode()
+        headers["X-API-Microtime"] = str(timestamp)
         headers["X-API-Hash"] = apihash.hexdigest()
         request.headers.update(headers)
         return request
