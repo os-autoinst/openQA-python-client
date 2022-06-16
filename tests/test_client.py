@@ -97,7 +97,7 @@ class TestClient:
         authed = client._add_auth_headers(prepared)
         assert prepared.headers != authed.headers
         assert authed.headers["X-API-Hash"] == "71373f0a57118b120d1915ccc0a24ae2cc112ad3"
-        assert authed.headers["X-API-Microtime"] == b"1582761600.0"
+        assert authed.headers["X-API-Microtime"] == "1582761600.0"
         # with no key/secret, request should be returned unmodified
         client = oqc.OpenQA_Client("localhost")
         request = requests.Request(
