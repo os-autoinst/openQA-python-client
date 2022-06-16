@@ -3,3 +3,6 @@
 build/
 dist/
 openqa_client.egg-info/
+/coverage.xml
+/.tox/
+/.coverage
