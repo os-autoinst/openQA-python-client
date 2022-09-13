@@ -1,5 +1,12 @@
 ## Changelog
 
+### 4.2.0 - 2022-09-13
+
+1.  Add class global retries and wait values to allow configuration (dcermak)
+2.  Add type hints (dcermak)
+3.  Stop encoding X-API-Microtime as bytes (dcermak)
+4.  Build and CI system modernizations and improvements
+
 ### 4.1.2 - 2021-04-27
 
 1.  Improve handling of quirky API behaviour regarding settings parameters
