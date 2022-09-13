@@ -1,3 +1,28 @@
+[project]
+name = "openqa_client"
+version = "4.1.2"
+authors = [
+    { name="Adam Williamson", email="awilliam@redhat.com" },
+]
+description = "Python client library for openQA API"
+readme = "README.md"
+license = { file="COPYING" }
+requires-python = ">=3.6"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+keywords = ["openqa", "opensuse", "fedora", "client"]
+dynamic = ["dependencies"]
+
+[project.urls]
+"Homepage" = "https://github.com/os-autoinst/openQA-python-client"
+"Bug Tracker" = "https://github.com/os-autoinst/openQA-python-client/issues"
+
 [build-system]
 requires = ["setuptools>=40.6.0", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -16,3 +41,6 @@ show_missing = true
 [tool.black]
 # don't @ me, Hynek
 line-length = 100
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["install.requires"] }
