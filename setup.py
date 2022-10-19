@@ -24,6 +24,7 @@ HERE = path.abspath(path.dirname(__file__))
 with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
     LONGDESC = f.read()
 
+# pylint: disable=consider-using-with
 setup(
     name="openqa_client",
     version="4.2.0",
@@ -35,7 +36,7 @@ setup(
     url="https://github.com/os-autoinst/openQA-python-client",
     packages=["openqa_client"],
     package_dir={"": "src"},
-    install_requires=open('install.requires').read().splitlines(),
+    install_requires=open(path.join(HERE, 'install.requires'), encoding='utf-8').read().splitlines(),
     python_requires="!=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4",
     long_description=LONGDESC,
     long_description_content_type='text/markdown',
