@@ -354,3 +354,17 @@ class TestClient:
         assert fakerequest.call_args[0][2] == "jobs"
         assert fakerequest.call_args[1]["params"] == {"build": "foo"}
         assert fakeclones.call_count == 1
+
+    def test_client_errors(self):
+        """Test creation of exceptions"""
+        err = oqe.RequestError("GET", "http://localhost", 404)
+        assert err.args[0] == "GET"
+        assert err.args[1] == "http://localhost"
+        assert err.args[2] == 404
+        assert err.method == "GET"
+        assert err.url == "http://localhost"
+        assert err.status_code == 404
+
+        err = oqe.ConnectionError("oh no")
+        assert err.args[0] == "oh no"
+        assert err.err == "oh no"
