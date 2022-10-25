@@ -62,7 +62,18 @@ The `const` module provides several constants that are shadowed from the
 upstream openQA code, including job states, results, and the 'scenario
 keys'.
 
+## Development
+
+You can file pull requests at [Github](https://github.com/os-autoinst/openQA-python-client).
+There is an extensive test suite with CI integration. You can run the test
+suite locally by running `tox`. If your system has a tox version earlier
+than 3.3.0, you must have the `setuptools_scm` Python module installed for
+this to work correctly, or else you will get errors about a missing
+`install.requires` file.
+
 ## Licensing
 
 This software is available under the GPL, version 2 or any later version.
-A copy is included as COPYING.
+A copy is included as COPYING. Contributions submitted as pull requests are
+assumed to be submitted under the same license terms unless otherwise
+specified.
