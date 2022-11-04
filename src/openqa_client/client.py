@@ -206,9 +206,6 @@ class OpenQA_Client:
             retries = self.retries
         if wait is None:
             wait = self.wait
-        # We can't use the nice urllib3 Retry stuff, because openSUSE
-        # 13.2 has a sadly outdated version of python-requests. We'll
-        # have to do it ourselves.
         try:
             resp = self.session.send(authed)
             if not resp.ok:
@@ -226,7 +223,12 @@ class OpenQA_Client:
                 return yaml.load(resp.text, Loader=yaml.SafeLoader)
             return resp.json()
         except (requests.exceptions.ConnectionError, openqa_client.exceptions.RequestError) as err:
-            if retries:
+            # We could use urllib3.util.Retry here, but that actually
+            # results in more lines of code than doing it ourselves
+            to_retry = (408, 413, 429, 444, 500, 502, 503, 504, 509, 521, 522, 599)
+            if retries and (
+                isinstance(err, requests.exceptions.ConnectionError) or err.status_code in to_retry
+            ):
                 logger.debug("do_request: request failed! Retrying in %s seconds...", wait)
                 logger.debug("Error: %s", err)
                 time.sleep(wait)
