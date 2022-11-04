@@ -183,9 +183,13 @@ class TestClient:
 
     @mock.patch("time.sleep", autospec=True)
     @mock.patch("requests.sessions.Session.send", autospec=True)
-    def test_do_request_not_ok(self, fakesend, fakesleep, simple_config):
-        """Test do_request (response not OK, default retries)."""
-        fakesend.return_value.ok = False
+    def test_do_request_502(self, fakesend, fakesleep, simple_config):
+        """Test do_request (response not OK and in the retry list,
+        default retries).
+        """
+        fakeresp = fakesend.return_value
+        fakeresp.ok = False
+        fakeresp.status_code = 502
         client = oqc.OpenQA_Client()
         params = {"id": "1"}
         request = requests.Request(url=client.baseurl + "/api/v1/jobs", method="GET", params=params)
@@ -197,6 +201,25 @@ class TestClient:
         assert fakesleep.call_count == 5
         sleeps = [call[0][0] for call in fakesleep.call_args_list]
         assert sleeps == [10, 20, 40, 60, 60]
+
+    @mock.patch("time.sleep", autospec=True)
+    @mock.patch("requests.sessions.Session.send", autospec=True)
+    def test_do_request_404(self, fakesend, fakesleep, simple_config):
+        """Test do_request (response not OK but not in the retry list,
+        default retries).
+        """
+        fakeresp = fakesend.return_value
+        fakeresp.ok = False
+        fakeresp.status_code = 404
+        client = oqc.OpenQA_Client()
+        params = {"id": "1"}
+        request = requests.Request(url=client.baseurl + "/api/v1/jobs", method="GET", params=params)
+        # if response is not OK, we should raise RequestError
+        with pytest.raises(oqe.RequestError):
+            client.do_request(request)
+        # we should not have retried
+        assert fakesend.call_count == 1
+        assert fakesleep.call_count == 0
 
     @mock.patch("time.sleep", autospec=True)
     @mock.patch(
