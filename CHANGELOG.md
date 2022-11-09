@@ -1,5 +1,10 @@
 ## Changelog
 
+### 4.2.1 - 2022-11-09
+
+1.  Make Exceptions proper objects with members (perlpunk)
+2.  Only retry requests on certain status codes
+
 ### 4.2.0 - 2022-09-13
 
 1.  Add class global retries and wait values to allow configuration (dcermak)
