@@ -40,7 +40,8 @@ class RequestError(OpenQAClientError):
     method, URL, and status code.
     """
 
-    def __init__(self, method: str, url: str, status_code: int) -> None:
+    def __init__(self, method: str, url: str, status_code: int, text: str) -> None:
         self.method = method
         self.url = url
         self.status_code = status_code
+        self.text = text
