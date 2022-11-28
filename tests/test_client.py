@@ -380,13 +380,15 @@ class TestClient:
 
     def test_client_errors(self):
         """Test creation of exceptions"""
-        err = oqe.RequestError("GET", "http://localhost", 404)
+        template_error = '{"error":"fail"}'
+        err = oqe.RequestError("GET", "http://localhost", 404, template_error)
         assert err.args[0] == "GET"
         assert err.args[1] == "http://localhost"
         assert err.args[2] == 404
         assert err.method == "GET"
         assert err.url == "http://localhost"
         assert err.status_code == 404
+        assert err.text == template_error
 
         err = oqe.ConnectionError("oh no")
         assert err.args[0] == "oh no"

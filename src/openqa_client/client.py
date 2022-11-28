@@ -210,7 +210,7 @@ class OpenQA_Client:
             resp = self.session.send(authed)
             if not resp.ok:
                 raise openqa_client.exceptions.RequestError(
-                    request.method, resp.url, resp.status_code
+                    request.method, resp.url, resp.status_code, resp.text
                 )
             if not parse or resp.status_code == 204:
                 return resp
