@@ -222,7 +222,10 @@ class OpenQA_Client:
                 # SafeLoader's capacity in the responses
                 return yaml.load(resp.text, Loader=yaml.SafeLoader)
             return resp.json()
-        except (requests.exceptions.ConnectionError, openqa_client.exceptions.RequestError) as err:
+        except (
+            requests.exceptions.ConnectionError,
+            openqa_client.exceptions.RequestError,
+        ) as err:
             # We could use urllib3.util.Retry here, but that actually
             # results in more lines of code than doing it ourselves
             to_retry = (408, 413, 429, 444, 500, 502, 503, 504, 509, 521, 522, 599)
@@ -329,7 +332,10 @@ class OpenQA_Client:
 
     @overload
     def get_jobs(
-        self, jobs: Optional[List[Union[str, int]]], build: Optional[str], filter_dupes: bool
+        self,
+        jobs: Optional[List[Union[str, int]]],
+        build: Optional[str],
+        filter_dupes: bool,
     ):
         ...  # pragma: no cover
 
