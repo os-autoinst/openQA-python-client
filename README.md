@@ -2,8 +2,7 @@
 
 This is a client for the [openQA](https://os-autoinst.github.io/openQA/)
 API, based on [requests](https://python-requests.org). It requires Python
-3.7 or later (we do not intentionally use features from after 3.6, but
-tests are no longer regularly run on 3.6 so we cannot guarantee support).
+3.6 or later.
 
 ## Usage
 
