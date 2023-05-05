@@ -33,7 +33,7 @@ branch = true
 source = ["openqa_client"]
 
 [tool.coverage.paths]
-source = ["src", ".tox/*/site-packages"]
+source = ["src", ".tox/**/site-packages"]
 
 [tool.coverage.report]
 show_missing = true
