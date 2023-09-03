@@ -201,13 +201,16 @@ class OpenQA_Client:
         """
         prepared = self.session.prepare_request(request)
         authed = self._add_auth_headers(prepared)
+        settings = self.session.merge_environment_settings(
+            url=self.baseurl, proxies=None, stream=None, verify=None, cert=None
+        )
 
         if retries is None:
             retries = self.retries
         if wait is None:
             wait = self.wait
         try:
-            resp = self.session.send(authed)
+            resp = self.session.send(authed, **settings)
             if not resp.ok:
                 raise openqa_client.exceptions.RequestError(
                     request.method, resp.url, resp.status_code, resp.text
