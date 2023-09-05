@@ -1,6 +1,6 @@
 [project]
 name = "openqa_client"
-version = "4.2.1"
+version = "4.2.2"
 authors = [
     { name="Adam Williamson", email="awilliam@redhat.com" },
 ]
