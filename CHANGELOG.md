@@ -1,5 +1,10 @@
 ## Changelog
 
+### 4.2.2 - 2023-09-05
+
+1.  Include the response text in RequestError (kalikiana)
+2.  Support `REQUESTS_CA_BUNDLE` and `CURL_CA_BUNDLE` environment variables (ricardobranco777)
+
 ### 4.2.1 - 2022-11-09
 
 1.  Make Exceptions proper objects with members (perlpunk)
