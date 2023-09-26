@@ -44,3 +44,9 @@ line-length = 100
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["install.requires"] }
+
+[tool.setuptools.package-data]
+"openqa_client" = ["py.typed"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
