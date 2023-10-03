@@ -1,5 +1,9 @@
 ## Changelog
 
+### 4.2.3 - 2023-10-03
+
+1.  Add py.typed marker to the package
+
 ### 4.2.2 - 2023-09-05
 
 1.  Include the response text in RequestError (kalikiana)
