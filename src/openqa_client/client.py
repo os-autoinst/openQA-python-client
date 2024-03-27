@@ -164,8 +164,7 @@ class OpenQA_Client:
         retries: Optional[int] = None,
         wait: Optional[Union[int, float]] = None,
         parse: Literal[False] = False,
-    ) -> requests.Response:
-        ...  # pragma: no cover
+    ) -> requests.Response: ...  # pragma: no cover
 
     @overload
     def do_request(
@@ -174,8 +173,7 @@ class OpenQA_Client:
         retries: Optional[int] = None,
         wait: Optional[Union[int, float]] = None,
         parse: Literal[True] = True,
-    ) -> Any:
-        ...  # pragma: no cover
+    ) -> Any: ...  # pragma: no cover
 
     def do_request(
         self,
@@ -327,14 +325,14 @@ class OpenQA_Client:
         return jobs
 
     @overload
-    def get_jobs(self, jobs: Literal[None], build: Literal[None], filter_dupes: bool) -> NoReturn:
-        ...  # pragma: no cover
+    def get_jobs(
+        self, jobs: Literal[None], build: Literal[None], filter_dupes: bool
+    ) -> NoReturn: ...  # pragma: no cover
 
     @overload
     def get_jobs(
         self, jobs: Optional[List[Union[str, int]]], build: Optional[str], filter_dupes: bool
-    ):
-        ...  # pragma: no cover
+    ): ...  # pragma: no cover
 
     def get_jobs(
         self,
