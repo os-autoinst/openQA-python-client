@@ -35,9 +35,9 @@ import yaml
 import openqa_client.exceptions
 
 if sys.version_info >= (3, 8):
-    from typing import Literal, TypedDict
+    from typing import Literal, TypedDict, Callable
 else:  # pragma: no cover
-    from typing_extensions import Literal, TypedDict  # pragma: no cover
+    from typing_extensions import Literal, TypedDict, Callable  # pragma: no cover
 
 
 logger = logging.getLogger(__name__)
@@ -377,3 +377,30 @@ class OpenQA_Client:
             # there as it only considers the jobs queried.
             jobdicts = self.find_clones(jobdicts)
         return jobdicts
+
+    def get_latest_build(
+        self,
+        group_id: int,
+        all_passed: bool = True,
+        sort_key: Callable = int,
+    ) -> str:
+        """Identify latest build number in target Job Group
+
+        Args:
+            group_id (int): Job Group ID
+            all_passed (bool, optional): Controls whether just last build will be selected
+                or the last with all jobs passed. Defaults to True.
+            sorted_key (Callable, optional): To find the latest build we need to order the builds.
+                The specified callable will be passed to sorted() to sort the builds.
+                Defaults to int.
+
+        Returns:
+            str: string representation of last BUILD
+        """
+        resp = self.openqa_request("GET", f"job_groups/{group_id}/build_results")
+        if all_passed:
+            passed = [r for r in resp["build_results"] if r["all_passed"] == 1]
+            builds = [r["build"] for r in passed if r["build"].isdigit()]
+        else:
+            builds = [r["build"] for r in resp["build_results"] if r["build"].isdigit()]
+        return sorted(builds, key=sort_key)[-1] if builds else ""
