@@ -393,3 +393,32 @@ class TestClient:
         err = oqe.ConnectionError("oh no")
         assert err.args[0] == "oh no"
         assert err.err == "oh no"
+
+    @mock.patch("openqa_client.client.OpenQA_Client.openqa_request", autospec=True)
+    def test_get_latest_build(self, fakerequest):
+        client = oqc.OpenQA_Client()
+        fakerequest.return_value = {"build_results": [{"all_passed": 0, "build": "1"}]}
+        ret = client.get_latest_build(42)
+        # returns default when no passed builds available
+        assert ret == ""
+        ret = client.get_latest_build(42, all_passed=False)
+        # returns build with all_passed=0 when all_passed is False
+        assert ret == "1"
+        fakerequest.return_value = {
+            "build_results": [
+                {"all_passed": 1, "build": "2"},
+                {"all_passed": 1, "build": "3"},
+                {"all_passed": 1, "build": "4"},
+                {"all_passed": 0, "build": "5"},
+                {"all_passed": 1, "build": "qq"},
+                {"all_passed": 1, "build": "001"},
+            ]
+        }
+        ret = client.get_latest_build(42)
+        # returns lastest passed build when all_passed flag set to True
+        assert ret == "4"
+        ret = client.get_latest_build(42, all_passed=False)
+        # returns lastest failed build when all_passed flag set to False
+        assert ret == "5"
+        ret = client.get_latest_build(42, sort_key=len)
+        assert ret == "001"
