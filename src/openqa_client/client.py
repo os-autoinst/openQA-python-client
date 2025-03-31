@@ -390,7 +390,7 @@ class OpenQA_Client:
             group_id (int): Job Group ID
             all_passed (bool, optional): Controls whether just last build will be selected
                 or the last with all jobs passed. Defaults to True.
-            sorted_key (Callable, optional): To find the latest build we need to order the builds.
+            sort_key (Callable, optional): To find the latest build we need to order the builds.
                 The specified callable will be passed to sorted() to sort the builds.
                 Defaults to int.
 

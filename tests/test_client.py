@@ -415,10 +415,10 @@ class TestClient:
             ]
         }
         ret = client.get_latest_build(42)
-        # returns lastest passed build when all_passed flag set to True
+        # returns latest passed build when all_passed flag set to True
         assert ret == "4"
         ret = client.get_latest_build(42, all_passed=False)
-        # returns lastest failed build when all_passed flag set to False
+        # returns latest failed build when all_passed flag set to False
         assert ret == "5"
         ret = client.get_latest_build(42, sort_key=len)
         assert ret == "001"
