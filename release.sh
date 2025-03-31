@@ -3,6 +3,7 @@
 baddeps=""
 # check deps
 python3 -m build.__init__ || baddeps="python3-build"
+rpm -q twine || baddeps="${baddeps} twine"
 if [ -n "${baddeps}" ]; then
     echo "${baddeps} must be installed!"
     exit 1
