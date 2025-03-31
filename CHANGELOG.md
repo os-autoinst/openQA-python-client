@@ -1,5 +1,9 @@
 ## Changelog
 
+### 4.3.0 - 2025-03-31
+
+1.  Add new `get_latest_build` method (asmorodskyi)
+
 ### 4.2.3 - 2023-10-03
 
 1.  Add py.typed marker to the package
