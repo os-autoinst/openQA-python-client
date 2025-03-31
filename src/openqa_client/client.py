@@ -25,7 +25,7 @@ import os
 import logging
 import time
 import sys
-from typing import Any, Dict, List, MutableMapping, NoReturn, Optional, Union, overload
+from typing import Any, Callable, Dict, List, MutableMapping, NoReturn, Optional, Union, overload
 
 from urllib.parse import urlparse, urlunparse
 import configparser
@@ -35,9 +35,9 @@ import yaml
 import openqa_client.exceptions
 
 if sys.version_info >= (3, 8):
-    from typing import Literal, TypedDict, Callable
+    from typing import Literal, TypedDict
 else:  # pragma: no cover
-    from typing_extensions import Literal, TypedDict, Callable  # pragma: no cover
+    from typing_extensions import Literal, TypedDict  # pragma: no cover
 
 
 logger = logging.getLogger(__name__)
