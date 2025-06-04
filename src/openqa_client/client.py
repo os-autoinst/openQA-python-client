@@ -25,7 +25,17 @@ import os
 import logging
 import time
 import sys
-from typing import Any, Callable, Dict, List, MutableMapping, NoReturn, Optional, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    MutableMapping,
+    NoReturn,
+    Optional,
+    Sequence,
+    Union,
+    overload,
+)
 
 from urllib.parse import urlparse, urlunparse
 import configparser
@@ -298,7 +308,7 @@ class OpenQA_Client:
         req = requests.Request(method=method.upper(), url=url, params=params, data=data)
         return self.do_request(req, retries=retries, wait=wait, parse=True)
 
-    def find_clones(self, jobs: List[Job]) -> List[Job]:
+    def find_clones(self, jobs: Sequence[Job]) -> Sequence[Job]:
         """Given an iterable of job dicts, this will see if any of the
         jobs were cloned, and replace any that were cloned with the dicts
         of their clones, returning a list. It recurses - so if 3 was
@@ -331,15 +341,18 @@ class OpenQA_Client:
 
     @overload
     def get_jobs(
-        self, jobs: Optional[List[Union[str, int]]], build: Optional[str], filter_dupes: bool
+        self,
+        jobs: Optional[Sequence[Union[str, int]]],
+        build: Optional[str],
+        filter_dupes: bool,
     ): ...  # pragma: no cover
 
     def get_jobs(
         self,
-        jobs: Optional[List[Union[str, int]]] = None,
+        jobs: Optional[Sequence[Union[str, int]]] = None,
         build: Optional[str] = None,
         filter_dupes: bool = True,
-    ):
+    ) -> Sequence[Union[Job, dict]]:
         """Get job dicts. Either 'jobs' or 'build' must be specified.
         'jobs' should be iterable of job IDs (string or int). 'build'
         should be an openQA BUILD to get all the jobs for. If both are
