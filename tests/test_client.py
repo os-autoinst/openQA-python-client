@@ -259,6 +259,21 @@ class TestClient:
         assert fakedo.call_args[0][1].params == {}
         assert fakedo.call_args[1]["retries"] == 2
         assert fakedo.call_args[1]["wait"] == 5
+        # check requests with data work
+        fakedo.reset_mock()
+        client.openqa_request("get", "jobs", data=params)
+        prepped = fakedo.call_args[0][1].prepare()
+        assert prepped.body == "id=1"
+        assert prepped.headers == {
+            "Content-Length": "4",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        # check requests with json work
+        fakedo.reset_mock()
+        client.openqa_request("get", "jobs", json=params)
+        prepped = fakedo.call_args[0][1].prepare()
+        assert prepped.body == b'{"id": "1"}'
+        assert prepped.headers == {"Content-Length": "11", "Content-Type": "application/json"}
 
     @mock.patch("time.sleep", autospec=True)
     @mock.patch(
