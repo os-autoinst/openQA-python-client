@@ -249,11 +249,16 @@ class OpenQA_Client:
         retries: Optional[int] = None,
         wait: Optional[int] = None,
         data: Any = None,
+        json: Any = None,
     ):
         """Perform a typical openQA request, with an API path and some
         optional parameters. Use the data parameter instead of params if you
         need to pass lots of settings. It will post
-        application/x-www-form-urlencoded data.
+        application/x-www-form-urlencoded data. Use the json parameter if you
+        are POSTing or PUTing to one of the endpoints that requires a
+        JSON-encoded request - test_suites, machines, or products. It will
+        send a request with JSON data and the required
+        Content-Type: application/json header.
 
         If either params or data is a dictionary and contains the key "settings"
         (which is a list of dictionaries), then the entries of "settings"
@@ -278,7 +283,7 @@ class OpenQA_Client:
         # But when we sent the reply back, we must send these settings in the
         # "top level" payload object like this:
         # "settings[varname]": "var_value"
-        for payload in (params, data):
+        for payload in (params, data, json):
             if (
                 payload is not None
                 and isinstance(payload, dict)
@@ -295,7 +300,7 @@ class OpenQA_Client:
             path = f"/api/v1/{path}"
 
         url = f"{self.baseurl}{path}"
-        req = requests.Request(method=method.upper(), url=url, params=params, data=data)
+        req = requests.Request(method=method.upper(), url=url, params=params, data=data, json=json)
         return self.do_request(req, retries=retries, wait=wait, parse=True)
 
     def find_clones(self, jobs: List[Job]) -> List[Job]:

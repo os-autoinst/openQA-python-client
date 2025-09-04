@@ -25,6 +25,14 @@ Here's an example of triggering jobs for an ISO:
     params['BUILD'] = '22_Beta_TC2'
     print(cl.openqa_request('POST', 'isos', params))
 
+You can use `data=` or `json=` instead of `params=`. `params=` adds
+query parameters to the request. `data=` sends
+`application/x-www-form-urlencoded` data; most endpoints accept this
+and it can avoid query string character limits for long requests.
+`json=` sends `application/json` encoded data; this is required for
+`POST` or `PUT` requests to the `test_suites`, `machines` and
+`products` endpoints.
+
 All methods other than `GET` require authentication. This client uses
 the same configuration file format as the reference (perl) client in
 openQA itself. Configuration will be read from `/etc/openqa/client.conf`
