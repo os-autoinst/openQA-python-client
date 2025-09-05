@@ -290,9 +290,9 @@ class OpenQA_Client:
         # groups, products, etc. that take a settings parameter, then this
         # settings parameter gets returned to us as a list like this:
         # [{"key": "varname", "value": "var_value"}]
-        # But when we sent the reply back, we must send these settings in the
-        # "top level" payload object like this:
-        # "settings[varname]": "var_value"
+        # But when we sent the reply back, we must send these settings in a
+        # simple dict like this:
+        # {"varname": "var_value"}
         for payload in (params, data, json):
             if (
                 payload is not None
@@ -301,8 +301,7 @@ class OpenQA_Client:
                 and isinstance(payload["settings"], list)
             ):
                 settings = payload.pop("settings")
-                for setting in settings:
-                    payload[f"settings[{setting.get('key')}]"] = setting["value"]
+                payload["settings"] = {setdict["key"]: setdict["value"] for setdict in settings}
 
         # As with the reference client, we assume relative paths are
         # relative to /api/v1.
