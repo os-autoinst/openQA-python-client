@@ -328,8 +328,10 @@ class TestClient:
         assert fakedo.call_args[0][1].params == {
             "id": "1",
             "name": "some_suite",
-            "settings[PUBLISH_HDD_1]": "%DISTRI%-%VERSION%-%ARCH%-%BUILD%.qcow2",
-            "settings[START_AFTER_TEST]": "fedora_rawhide_qcow2",
+            "settings": {
+                "PUBLISH_HDD_1": "%DISTRI%-%VERSION%-%ARCH%-%BUILD%.qcow2",
+                "START_AFTER_TEST": "fedora_rawhide_qcow2",
+            },
         }
         # check requests with a string payload
         fakedo.reset_mock()
