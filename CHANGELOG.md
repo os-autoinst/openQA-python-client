@@ -1,5 +1,10 @@
 ## Changelog
 
+### 4.3.1 - 2025-09-05
+
+1.  Fix `openqa_request` for table endpoints that now require JSON
+2.  Use Sequence instead of List type hints (KuxaBeast)
+
 ### 4.3.0 - 2025-03-31
 
 1.  Add new `get_latest_build` method (asmorodskyi)
