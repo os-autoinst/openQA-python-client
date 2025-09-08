@@ -5,7 +5,7 @@ on: [pull_request]
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       fail-fast: false
@@ -18,11 +18,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
-        include:
-          - os: "ubuntu-latest"
-          - os: "ubuntu-20.04"
-            python-version: "3.6"
-
+    container: ${{ contains(matrix.python-version, '3.6') && 'registry.opensuse.org/home/okurz/container/leap15/containers/leap:openQA-python-client-ci' || '' }}
     steps:
       - uses: actions/checkout@v5
         with:
