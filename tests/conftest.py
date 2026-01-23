@@ -67,7 +67,7 @@ def config(config_hosts):
     os.path.expanduser to return the home dir, then teardown on test
     completion.
     """
-    (datadir, home) = _config_setup(config_hosts)
+    datadir, home = _config_setup(config_hosts)
     with mock.patch("os.path.expanduser", return_value=home, autospec=True):
         yield
     _config_teardown(datadir)
@@ -79,7 +79,7 @@ def simple_config():
     os.path.expanduser to return the home dir, then teardown on test
     completion.
     """
-    (datadir, home) = _config_setup(["openqa.fedoraproject.org"])
+    datadir, home = _config_setup(["openqa.fedoraproject.org"])
     with mock.patch("os.path.expanduser", return_value=home, autospec=True):
         yield
     _config_teardown(datadir)
@@ -91,7 +91,7 @@ def empty_config():
     os.path.expanduser to return the home dir, then teardown on test
     completion.
     """
-    (datadir, home) = _config_setup([])
+    datadir, home = _config_setup([])
     with mock.patch("os.path.expanduser", return_value=home, autospec=True):
         yield
     _config_teardown(datadir)
