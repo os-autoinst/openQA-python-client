@@ -21,8 +21,10 @@ from os import path
 HERE = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
+with open(path.join(HERE, "README.md"), encoding="utf-8") as f:
     LONGDESC = f.read()
+with open("install.requires", encoding="utf-8") as f:
+    INSTALLDEPS = f.read().splitlines()
 
 setup(
     name="openqa_client",
@@ -36,10 +38,10 @@ setup(
     packages=["openqa_client"],
     package_data={"openqa_client": ["py.typed"]},
     package_dir={"": "src"},
-    install_requires=open('install.requires').read().splitlines(),
+    install_requires=INSTALLDEPS,
     python_requires="!=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4",
     long_description=LONGDESC,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",

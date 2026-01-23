@@ -31,6 +31,7 @@ build-backend = "setuptools.build_meta"
 parallel = true
 branch = true
 source = ["openqa_client"]
+omit = ["*/openqa_client/const.py"]
 
 [tool.coverage.paths]
 source = ["src", ".tox/**/site-packages"]

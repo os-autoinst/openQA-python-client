@@ -127,7 +127,7 @@ class TestClient:
         # check we called .json() on the response
         fakeresp = fakesend.return_value
         assert len(fakeresp.method_calls) == 1
-        (callname, callargs, callkwargs) = fakeresp.method_calls[0]
+        callname, callargs, callkwargs = fakeresp.method_calls[0]
         assert callname == "json"
         assert not callargs
         assert not callkwargs
