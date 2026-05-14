@@ -19,12 +19,14 @@
 
 """Main client functionality."""
 
+import configparser
 import hashlib
 import hmac
-import os
 import logging
-import time
+import os
 import sys
+import time
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -36,9 +38,8 @@ from typing import (
     Union,
     overload,
 )
-
 from urllib.parse import urlparse, urlunparse
-import configparser
+
 import requests
 import yaml
 
@@ -97,8 +98,8 @@ class OpenQA_Client:
         self.wait = wait
         # Read in config files.
         config = configparser.ConfigParser()
-        paths = ("/etc/openqa", f"{os.path.expanduser('~')}/.config/openqa")
-        config.read(f"{path}/client.conf" for path in paths)
+        paths = (Path("/etc/openqa"), Path.home() / ".config/openqa")
+        config.read(path / "client.conf" for path in paths)
 
         # If server not specified, default to the first one in the
         # configuration file. If no configuration file, default to

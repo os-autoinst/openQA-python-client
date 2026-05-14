@@ -17,8 +17,9 @@
 
 """Custom exceptions used by openqa_client."""
 
-from requests.exceptions import ConnectionError as RConnectionError
 from typing import Optional
+
+from requests.exceptions import ConnectionError as RConnectionError
 
 
 class OpenQAClientError(Exception):

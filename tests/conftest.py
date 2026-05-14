@@ -22,15 +22,15 @@
 
 """Test configuration and fixtures."""
 
-import os
 import shutil
+from pathlib import Path
 from unittest import mock
 
 import pytest
 
 
 def _config_teardown(datadir):
-    if os.path.exists(datadir):
+    if Path(datadir).exists():
         shutil.rmtree(datadir)
 
 
@@ -41,12 +41,12 @@ def _config_setup(hosts):
     unless the host has 'nokey' in it, in which case we write an entry with
     no key or secret. Before doing this, re-create the home dir.
     """
-    datadir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
-    home = os.path.join(datadir, "home")
+    datadir = Path(__file__).resolve().parent / "data"
+    home = datadir / "home"
     _config_teardown(datadir)
-    confpath = os.path.join(home, ".config", "openqa")
-    os.makedirs(confpath)
-    confpath = os.path.join(confpath, "client.conf")
+    confpath = home / ".config" / "openqa"
+    confpath.mkdir(parents=True)
+    confpath = confpath / "client.conf"
     content = []
     for host in hosts:
         if "nokey" in host:
@@ -55,7 +55,7 @@ def _config_setup(hosts):
         else:
             content.extend([f"[{host}]", "key = aaaaaaaaaaaaaaaa", "secret = bbbbbbbbbbbbbbbb"])
     content = "\n".join(content)
-    with open(confpath, "w") as conffh:
+    with confpath.open("w") as conffh:
         conffh.write(content)
     return (datadir, home)
 
@@ -64,11 +64,11 @@ def _config_setup(hosts):
 def config(config_hosts):
     """Create config file via _config_setup, using list of hosts from arg.
 
-    Intended for parametrization. Patches os.path.expanduser to return
+    Intended for parametrization. Patches pathlib.Path.home to return
     the home dir, then tears down on test completion.
     """
     datadir, home = _config_setup(config_hosts)
-    with mock.patch("os.path.expanduser", return_value=home, autospec=True):
+    with mock.patch("pathlib.Path.home", return_value=home):
         yield
     _config_teardown(datadir)
 
@@ -77,11 +77,11 @@ def config(config_hosts):
 def simple_config():
     """Create config file via _config_setup, with a single host.
 
-    Patches os.path.expanduser to return the home dir, then tears down on
+    Patches pathlib.Path.home to return the home dir, then tears down on
     test completion.
     """
     datadir, home = _config_setup(["openqa.fedoraproject.org"])
-    with mock.patch("os.path.expanduser", return_value=home, autospec=True):
+    with mock.patch("pathlib.Path.home", return_value=home):
         yield
     _config_teardown(datadir)
 
@@ -90,10 +90,10 @@ def simple_config():
 def empty_config():
     """Create empty config file via _config_setup.
 
-    Patches os.path.expanduser to return the home dir, then tears down on
+    Patches pathlib.Path.home to return the home dir, then tears down on
     test completion.
     """
     datadir, home = _config_setup([])
-    with mock.patch("os.path.expanduser", return_value=home, autospec=True):
+    with mock.patch("pathlib.Path.home", return_value=home):
         yield
     _config_teardown(datadir)
