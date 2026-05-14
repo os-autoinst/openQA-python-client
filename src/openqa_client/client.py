@@ -71,8 +71,9 @@ class Job(TypedDict):
 
 
 class OpenQA_Client:
-    """A client for the OpenQA REST API; just handles API auth if
-    needed and provides a couple of custom methods for convenience.
+    """A client for the OpenQA REST API.
+
+    Handles API auth if needed and provides a couple of custom methods for convenience.
 
     Args:
         server: The URL or hostname of the openqa server.
@@ -86,6 +87,7 @@ class OpenQA_Client:
         wait: A default value for the time to wait between attempted requests
               in seconds. The value provided to the respective method calls
               takes precedence over this.
+
     """
 
     def __init__(
@@ -150,8 +152,9 @@ class OpenQA_Client:
         self.session.headers.update(headers)
 
     def _add_auth_headers(self, request: requests.PreparedRequest) -> requests.PreparedRequest:
-        """Add authentication headers to a PreparedRequest. See
-        openQA/lib/OpenQA/client.pm for the authentication design.
+        """Add authentication headers to a PreparedRequest.
+
+        See openQA/lib/OpenQA/client.pm for the authentication design.
         """
         if not self.apisecret:
             # Can't auth without an API key.
@@ -192,10 +195,10 @@ class OpenQA_Client:
         wait: Optional[Union[int, float]] = None,
         parse: bool = True,
     ) -> Union[Any, requests.Response]:
-        """Passed a requests.Request, prepare it with the necessary
-        headers, submit it, and return the parsed output (unless parse
-        is False, in which case return the response for the caller to
-        do whatever it likes with). You can use this directly instead
+        """Prepare and submit a requests.Request, returning the parsed output.
+
+        Unless parse is False, in which case return the response for the caller to
+        do whatever it likes with. You can use this directly instead
         of openqa_request() if you need to do something unusual. May
         raise ConnectionError or RequestError if the connection or the
         request fail in some way after 'retries' attempts. 'wait'
@@ -261,9 +264,9 @@ class OpenQA_Client:
         data: Any = None,
         json: Any = None,
     ):
-        """Perform a typical openQA request, with an API path and some
-        optional parameters. Use the data parameter instead of params if you
-        need to pass lots of settings. It will post
+        """Perform a typical openQA request, with an API path and optional parameters.
+
+        Use the data parameter instead of params if you need to pass lots of settings. It will post
         application/x-www-form-urlencoded data. Use the json parameter if you
         are POSTing or PUTing to one of the endpoints that requires a
         JSON-encoded request - test_suites, machines, or products. It will
@@ -313,7 +316,9 @@ class OpenQA_Client:
         return self.do_request(req, retries=retries, wait=wait, parse=True)
 
     def find_clones(self, jobs: Sequence[Job]) -> Sequence[Job]:
-        """Given an iterable of job dicts, this will see if any of the
+        """Follow the clone chain of each job and return the resulting list.
+
+        Given an iterable of job dicts, this will see if any of the
         jobs were cloned, and replace any that were cloned with the dicts
         of their clones, returning a list. It recurses - so if 3 was
         cloned as 4 and 4 was cloned as 5, you'll wind up with 5. If both
@@ -357,7 +362,9 @@ class OpenQA_Client:
         build: Optional[str] = None,
         filter_dupes: bool = True,
     ) -> Sequence[Union[Job, dict]]:
-        """Get job dicts. Either 'jobs' or 'build' must be specified.
+        """Get job dicts by job IDs or BUILD.
+
+        Either 'jobs' or 'build' must be specified.
         'jobs' should be iterable of job IDs (string or int). 'build'
         should be an openQA BUILD to get all the jobs for. If both are
         specified, 'jobs' will be used and 'build' ignored. If
@@ -401,7 +408,7 @@ class OpenQA_Client:
         all_passed: bool = True,
         sort_key: Callable = int,
     ) -> str:
-        """Identify latest build number in target Job Group
+        """Identify latest build number in target Job Group.
 
         Args:
             group_id (int): Job Group ID
@@ -413,6 +420,7 @@ class OpenQA_Client:
 
         Returns:
             str: string representation of last BUILD
+
         """
         resp = self.openqa_request("GET", f"job_groups/{group_id}/build_results")
         if all_passed:

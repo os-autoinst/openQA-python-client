@@ -15,6 +15,8 @@
 #
 # Author: Adam Williamson <awilliam@redhat.com>
 
+"""Package setup for openqa_client."""
+
 from setuptools import setup
 from os import path
 

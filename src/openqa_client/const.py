@@ -15,8 +15,9 @@
 #
 # Authors: Adam Williamson <awilliam@redhat.com>
 
-"""Important constants duplicated from openQA. We need to keep this in
-sync with upstream, but it's better to have it done just once here
+"""Important constants duplicated from openQA.
+
+We need to keep this in sync with upstream, but it's better to have it done just once here
 rather than every consumer of this library duplicating things like
 'these are the "running" states' on the fly. It is explicitly allowed
 to use 'from openqa_client.const import *'; this will only import

@@ -28,8 +28,9 @@ class OpenQAClientError(Exception):
 
 
 class ConnectionError(OpenQAClientError):
-    """Error raised when server connection fails. Just passed through
-    requests.exceptions.ConnectionError.
+    """Error raised when server connection fails.
+
+    Just passed through requests.exceptions.ConnectionError.
     """
 
     def __init__(self, err: RConnectionError) -> None:
@@ -37,8 +38,9 @@ class ConnectionError(OpenQAClientError):
 
 
 class RequestError(OpenQAClientError):
-    """Error raised when a request fails (after retries). 3-tuple of
-    method, URL, and status code.
+    """Error raised when a request fails (after retries).
+
+    3-tuple of method, URL, and status code.
     """
 
     def __init__(self, method: Optional[str], url: str, status_code: int, text: str) -> None:

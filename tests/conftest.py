@@ -35,11 +35,11 @@ def _config_teardown(datadir):
 
 
 def _config_setup(hosts):
-    """Creates a config file in a fake user home directory, at
-    data/home/ under the tests directory. For each host in hosts we
-    write an entry with the same key and secret, unless the host has
-    'nokey' in it, in which case we write an entry with no key or
-    secret. Before doing this, re-create the home dir.
+    """Create a config file in a fake user home directory at data/home/.
+
+    For each host in hosts we write an entry with the same key and secret,
+    unless the host has 'nokey' in it, in which case we write an entry with
+    no key or secret. Before doing this, re-create the home dir.
     """
     datadir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
     home = os.path.join(datadir, "home")
@@ -62,10 +62,10 @@ def _config_setup(hosts):
 
 @pytest.fixture(scope="function")
 def config(config_hosts):
-    """Create config file via _config_setup, using list of hosts
-    passed in via arg (intended for parametrization). Patch
-    os.path.expanduser to return the home dir, then teardown on test
-    completion.
+    """Create config file via _config_setup, using list of hosts from arg.
+
+    Intended for parametrization. Patches os.path.expanduser to return
+    the home dir, then tears down on test completion.
     """
     datadir, home = _config_setup(config_hosts)
     with mock.patch("os.path.expanduser", return_value=home, autospec=True):
@@ -75,9 +75,10 @@ def config(config_hosts):
 
 @pytest.fixture(scope="function")
 def simple_config():
-    """Create config file via _config_setup, with a single host. Patch
-    os.path.expanduser to return the home dir, then teardown on test
-    completion.
+    """Create config file via _config_setup, with a single host.
+
+    Patches os.path.expanduser to return the home dir, then tears down on
+    test completion.
     """
     datadir, home = _config_setup(["openqa.fedoraproject.org"])
     with mock.patch("os.path.expanduser", return_value=home, autospec=True):
@@ -87,9 +88,10 @@ def simple_config():
 
 @pytest.fixture(scope="function")
 def empty_config():
-    """Create empty config file via _config_setup. Patch
-    os.path.expanduser to return the home dir, then teardown on test
-    completion.
+    """Create empty config file via _config_setup.
+
+    Patches os.path.expanduser to return the home dir, then tears down on
+    test completion.
     """
     datadir, home = _config_setup([])
     with mock.patch("os.path.expanduser", return_value=home, autospec=True):
