@@ -26,6 +26,7 @@ import logging
 import os
 import sys
 import time
+from http import HTTPStatus
 from pathlib import Path
 from typing import (
     Any,
@@ -55,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 
 RequestMethod = Literal["get", "put", "post", "delete", "GET", "PUT", "POST", "DELETE"]
+OpenQAResponse = Union[Dict[str, Any], requests.Response]
 
 
 class Job(TypedDict):
@@ -171,42 +173,19 @@ class OpenQA_Client:
         request.headers.update(headers)
         return request
 
-    @overload
     def do_request(
         self,
         request: requests.Request,
         retries: Optional[int] = None,
         wait: Optional[Union[int, float]] = None,
-        parse: Literal[False] = False,
-    ) -> requests.Response: ...  # pragma: no cover
+    ) -> requests.Response:
+        """Prepare and submit a Request, returning the raw response.
 
-    @overload
-    def do_request(
-        self,
-        request: requests.Request,
-        retries: Optional[int] = None,
-        wait: Optional[Union[int, float]] = None,
-        parse: Literal[True] = True,
-    ) -> Any: ...  # pragma: no cover
-
-    def do_request(
-        self,
-        request: requests.Request,
-        retries: Optional[int] = None,
-        wait: Optional[Union[int, float]] = None,
-        parse: bool = True,
-    ) -> Union[Any, requests.Response]:
-        """Prepare and submit a requests.Request, returning the parsed output.
-
-        Unless parse is False, in which case return the response for the caller to
-        do whatever it likes with. You can use this directly instead
-        of openqa_request() if you need to do something unusual. May
-        raise ConnectionError or RequestError if the connection or the
-        request fail in some way after 'retries' attempts. 'wait'
-        determines how long we wait between retries: on the *first*
-        retry we wait exactly 'wait' seconds, on each subsequent retry
-        the wait time is doubled, up to a max of 60 seconds between
-        attempts.
+        Use openqa_request() for typical API calls, which also handle parsing.
+        May raise ConnectionError or RequestError after 'retries' attempts.
+        'wait' determines how long we wait between retries: on the *first*
+        retry we wait exactly 'wait' seconds, on each subsequent retry the wait
+        time is doubled, up to a max of 60 seconds between attempts.
 
         If wait or retries are None, then the global values of this class are
         used or the defaults apply.
@@ -227,16 +206,7 @@ class OpenQA_Client:
                 raise openqa_client.exceptions.RequestError(
                     request.method, resp.url, resp.status_code, resp.text
                 )
-            if not parse or resp.status_code == 204:
-                return resp
-            # check if the server sent us YAML when we asked for JSON
-            contype = resp.headers.get("content-type", "")
-            if contype.startswith("text/yaml"):
-                # FullLoader should also be fine as we trust the devs,
-                # but I doubt they're gonna put anything beyond
-                # SafeLoader's capacity in the responses
-                return yaml.load(resp.text, Loader=yaml.SafeLoader)
-            return resp.json()
+            return resp
         except (requests.exceptions.ConnectionError, openqa_client.exceptions.RequestError) as err:
             # We could use urllib3.util.Retry here, but that actually
             # results in more lines of code than doing it ourselves
@@ -251,21 +221,33 @@ class OpenQA_Client:
                 return self.do_request(request, retries=retries - 1, wait=newwait)
             if isinstance(err, openqa_client.exceptions.RequestError):
                 raise err
-            if isinstance(err, requests.exceptions.ConnectionError):
-                raise openqa_client.exceptions.ConnectionError(err)
-            assert False, "This code path must be unreachable"
+            raise openqa_client.exceptions.ConnectionError(err)
 
-    def openqa_request(
+    @staticmethod
+    def _parse_response(resp: requests.Response) -> dict[str, Any]:
+        """Parse JSON or YAML from a response body."""
+        # check if the server sent us YAML when we asked for JSON
+        if resp.headers.get("content-type", "").startswith("text/yaml"):
+            # FullLoader should also be fine as we trust the devs,
+            # but I doubt they're gonna put anything beyond
+            # SafeLoader's capacity in the responses
+            return yaml.load(resp.text, Loader=yaml.SafeLoader)
+        return resp.json()
+
+    def _build_request(
         self,
         method: RequestMethod,
         path: str,
-        params: Any = None,
+        params: Optional[Dict[str, Any]] = None,
         retries: Optional[int] = None,
         wait: Optional[int] = None,
-        data: Any = None,
-        json: Any = None,
-    ):
-        """Perform a typical openQA request, with an API path and optional parameters.
+        data: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> requests.Response:
+        """Build, send, and retry an openQA API request.
+
+        Handles settings-list conversion and path prefixing, then delegates
+        to do_request for transport and retries.
 
         Use the data parameter instead of params if you need to pass lots of settings. It will post
         application/x-www-form-urlencoded data. Use the json parameter if you
@@ -314,7 +296,43 @@ class OpenQA_Client:
 
         url = f"{self.baseurl}{path}"
         req = requests.Request(method=method.upper(), url=url, params=params, data=data, json=json)
-        return self.do_request(req, retries=retries, wait=wait, parse=True)
+        return self.do_request(req, retries=retries, wait=wait)
+
+    def openqa_request(
+        self,
+        method: RequestMethod,
+        path: str,
+        params: Optional[Dict[str, Any]] = None,
+        retries: Optional[int] = None,
+        wait: Optional[int] = None,
+        data: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> OpenQAResponse:
+        """Perform an openQA request that may return 204 No Content.
+
+        Returns the parsed response body, or the raw Response for 204.
+        """
+        resp = self._build_request(method, path, params, retries, wait, data, json)
+        if resp.status_code == HTTPStatus.NO_CONTENT:
+            # job_templates_scheduling/:id returns 204 No Content on success;
+            # there is no body to parse so return the response for the caller
+            # to inspect if needed.
+            return resp
+        return self._parse_response(resp)
+
+    def _openqa_request_json(
+        self,
+        method: RequestMethod,
+        path: str,
+        params: Optional[Dict[str, Any]] = None,
+        retries: Optional[int] = None,
+        wait: Optional[int] = None,
+        data: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Perform an openQA request that always returns parsed JSON/YAML."""
+        resp = self._build_request(method, path, params, retries, wait, data, json)
+        return self._parse_response(resp)
 
     def find_clones(self, jobs: Sequence[Job]) -> Sequence[Job]:
         """Follow the clone chain of each job and return the resulting list.
@@ -340,7 +358,7 @@ class OpenQA_Client:
 
             if toget:
                 # Get clones and add them to the list
-                clones = self.openqa_request("GET", "jobs", params={"ids": ",".join(toget)})["jobs"]
+                clones = self._openqa_request_json("GET", "jobs", params={"ids": ",".join(toget)})["jobs"]
                 jobs.extend(clones)
         return jobs
 
@@ -355,7 +373,7 @@ class OpenQA_Client:
         jobs: Optional[Sequence[Union[str, int]]],
         build: Optional[str],
         filter_dupes: bool,
-    ): ...  # pragma: no cover
+    ) -> Sequence[Union[Job, dict]]: ...  # pragma: no cover
 
     def get_jobs(
         self,
@@ -393,7 +411,7 @@ class OpenQA_Client:
             params = {"build": build}
         if filter_dupes:
             params["latest"] = "1"
-        jobdicts = self.openqa_request("GET", "jobs", params=params)["jobs"]
+        jobdicts = self._openqa_request_json("GET", "jobs", params=params)["jobs"]
         if filter_dupes:
             # sub out clones. when run on a BUILD this is superfluous
             # as 'latest' will always wind up finding the latest clone
@@ -423,7 +441,7 @@ class OpenQA_Client:
             str: string representation of last BUILD
 
         """
-        resp = self.openqa_request("GET", f"job_groups/{group_id}/build_results")
+        resp = self._openqa_request_json("GET", f"job_groups/{group_id}/build_results")
         if all_passed:
             passed = [r for r in resp["build_results"] if r["all_passed"] == 1]
             builds = [r["build"] for r in passed if r["build"].isdigit()]

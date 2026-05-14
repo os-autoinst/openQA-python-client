@@ -146,7 +146,7 @@ ignore = [
 max-complexity = 9
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004", "ANN401", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103"]
+"tests/*" = ["PLR2004", "ANN401", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103", "PLR6301"]
 # const.py uses intentional aligned columns and single quotes; preserve them
 "src/openqa_client/const.py" = ["E221", "E222", "Q000"]
 # client.py retry logic: intentional raise-inside-try pattern; TypeError("msg") is idiomatic
