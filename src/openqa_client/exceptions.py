@@ -18,6 +18,7 @@
 """Custom exceptions used by openqa_client."""
 
 from requests.exceptions import ConnectionError as RConnectionError
+from typing import Optional
 
 
 class OpenQAClientError(Exception):
@@ -40,7 +41,7 @@ class RequestError(OpenQAClientError):
     method, URL, and status code.
     """
 
-    def __init__(self, method: str, url: str, status_code: int, text: str) -> None:
+    def __init__(self, method: Optional[str], url: str, status_code: int, text: str) -> None:
         self.method = method
         self.url = url
         self.status_code = status_code
