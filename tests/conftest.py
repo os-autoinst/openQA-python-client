@@ -46,7 +46,7 @@ def _config_setup(hosts):
     _config_teardown(datadir)
     confpath = home / ".config" / "openqa"
     confpath.mkdir(parents=True)
-    confpath = confpath / "client.conf"
+    confpath /= "client.conf"
     content = []
     for host in hosts:
         if "nokey" in host:
@@ -60,7 +60,7 @@ def _config_setup(hosts):
     return (datadir, home)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def config(config_hosts):
     """Create config file via _config_setup, using list of hosts from arg.
 
@@ -73,7 +73,7 @@ def config(config_hosts):
     _config_teardown(datadir)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def simple_config():
     """Create config file via _config_setup, with a single host.
 
@@ -86,7 +86,7 @@ def simple_config():
     _config_teardown(datadir)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def empty_config():
     """Create empty config file via _config_setup.
 

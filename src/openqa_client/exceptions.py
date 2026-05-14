@@ -17,15 +17,16 @@
 
 """Custom exceptions used by openqa_client."""
 
-from typing import Optional
+from __future__ import annotations
 
-from requests.exceptions import ConnectionError as RConnectionError
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from requests.exceptions import ConnectionError as RConnectionError
 
 
 class OpenQAClientError(Exception):
     """Base class for openQA client errors."""
-
-    pass
 
 
 class ConnectionError(OpenQAClientError):
@@ -44,7 +45,7 @@ class RequestError(OpenQAClientError):
     3-tuple of method, URL, and status code.
     """
 
-    def __init__(self, method: Optional[str], url: str, status_code: int, text: str) -> None:
+    def __init__(self, method: str | None, url: str, status_code: int, text: str) -> None:
         self.method = method
         self.url = url
         self.status_code = status_code

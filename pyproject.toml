@@ -136,17 +136,20 @@ ignore = [
     # `# noqa: CODE`. Keep noqa: it is portable across flake8 and older ruff.
     "RUF105", # noqa-comments
     "RUF201", # rule-codes-in-selectors
-    # Don't enforce future-annotations import or pyupgrade annotation style
-    "FA100", "FA102",
+    # Don't enforce pyupgrade annotation style
     "UP006", "UP007", "UP045",
     "FBT001", "FBT002",
 ]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 9
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-positional-args = 7
+max-args = 7
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004", "ANN401", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103", "PLR6301"]
+"tests/*" = ["PLR2004", "ANN401", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103", "PLR6301", "FA100", "FA102"]
 # const.py uses intentional aligned columns and single quotes; preserve them
 "src/openqa_client/const.py" = ["E221", "E222", "Q000"]
 # client.py retry logic: intentional raise-inside-try pattern; TypeError("msg") is idiomatic

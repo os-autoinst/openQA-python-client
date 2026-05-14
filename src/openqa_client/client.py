@@ -19,26 +19,27 @@
 
 """Main client functionality."""
 
+from __future__ import annotations
+
 import configparser
 import hashlib
 import hmac
 import logging
-import os
-import sys
 import time
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    MutableMapping,
+    Literal,
     NoReturn,
-    Optional,
-    Sequence,
+    TypedDict,
     Union,
     overload,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, MutableMapping, Sequence
 from urllib.parse import urlparse, urlunparse
 
 import requests
@@ -46,34 +47,25 @@ import yaml
 
 import openqa_client.exceptions
 
-if sys.version_info >= (3, 8):
-    from typing import Literal, TypedDict
-else:  # pragma: no cover
-    from typing_extensions import Literal, TypedDict  # pragma: no cover
-
-
 logger = logging.getLogger(__name__)
 
 
 RequestMethod = Literal["get", "put", "post", "delete", "GET", "PUT", "POST", "DELETE"]
-OpenQAResponse = Union[Dict[str, Any], requests.Response]
+OpenQAResponse = Union[dict[str, Any], requests.Response]
 
 
 class Job(TypedDict):
     """Response from openQA about a job."""
 
     #: settings of this job as reported in the webui
-    settings: Dict[str, str]
+    settings: dict[str, str]
     #: this jobs unique identifier
     id: int
     #: the unique identifier of the job as which this job has been cloned
     clone_id: int
 
 
-## MAIN CLIENT CLASS
-
-
-class OpenQA_Client:
+class OpenQA_Client:  # noqa: N801
     """A client for the OpenQA REST API.
 
     Handles API auth if needed and provides a couple of custom methods for convenience.
@@ -123,12 +115,11 @@ class OpenQA_Client:
             server = urlparse(server).netloc
 
         if not scheme:
-            if server in ("localhost", "127.0.0.1", "::1"):
+            scheme = "https"
+            if server in {"localhost", "127.0.0.1", "::1"}:
                 # Default to non-TLS for localhost; cert is unlikely to
                 # be valid for 'localhost' and there's no MITM...
                 scheme = "http"
-            else:
-                scheme = "https"
 
         self.baseurl = urlunparse((scheme, server, "", "", "", ""))
 
@@ -176,8 +167,8 @@ class OpenQA_Client:
     def do_request(
         self,
         request: requests.Request,
-        retries: Optional[int] = None,
-        wait: Optional[Union[int, float]] = None,
+        retries: int | None = None,
+        wait: float | None = None,
     ) -> requests.Response:
         """Prepare and submit a Request, returning the raw response.
 
@@ -238,11 +229,11 @@ class OpenQA_Client:
         self,
         method: RequestMethod,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        retries: Optional[int] = None,
-        wait: Optional[int] = None,
-        data: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        retries: int | None = None,
+        wait: int | None = None,
+        data: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
     ) -> requests.Response:
         """Build, send, and retry an openQA API request.
 
@@ -275,10 +266,10 @@ class OpenQA_Client:
         # we have to work around a limitation in the API: when modifying job
         # groups, products, etc. that take a settings parameter, then this
         # settings parameter gets returned to us as a list like this:
-        # [{"key": "varname", "value": "var_value"}]
+        # [{"key": "varname", "value": "var_value"}]  # noqa: ERA001
         # But when we sent the reply back, we must send these settings in a
         # simple dict like this:
-        # {"varname": "var_value"}
+        # {"varname": "var_value"}  # noqa: ERA001
         for payload in (params, data, json):
             if (
                 payload is not None
@@ -302,11 +293,11 @@ class OpenQA_Client:
         self,
         method: RequestMethod,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        retries: Optional[int] = None,
-        wait: Optional[int] = None,
-        data: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        retries: int | None = None,
+        wait: int | None = None,
+        data: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
     ) -> OpenQAResponse:
         """Perform an openQA request that may return 204 No Content.
 
@@ -324,12 +315,12 @@ class OpenQA_Client:
         self,
         method: RequestMethod,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        retries: Optional[int] = None,
-        wait: Optional[int] = None,
-        data: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        params: dict[str, Any] | None = None,
+        retries: int | None = None,
+        wait: int | None = None,
+        data: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Perform an openQA request that always returns parsed JSON/YAML."""
         resp = self._build_request(method, path, params, retries, wait, data, json)
         return self._parse_response(resp)
@@ -364,23 +355,23 @@ class OpenQA_Client:
 
     @overload
     def get_jobs(
-        self, jobs: Literal[None], build: Literal[None], filter_dupes: bool
+        self, jobs: None, build: None, filter_dupes: bool
     ) -> NoReturn: ...  # pragma: no cover
 
     @overload
     def get_jobs(
         self,
-        jobs: Optional[Sequence[Union[str, int]]],
-        build: Optional[str],
+        jobs: Sequence[str | int] | None,
+        build: str | None,
         filter_dupes: bool,
-    ) -> Sequence[Union[Job, dict]]: ...  # pragma: no cover
+    ) -> Sequence[Job | dict]: ...  # pragma: no cover
 
     def get_jobs(
         self,
-        jobs: Optional[Sequence[Union[str, int]]] = None,
-        build: Optional[str] = None,
+        jobs: Sequence[str | int] | None = None,
+        build: str | None = None,
         filter_dupes: bool = True,
-    ) -> Sequence[Union[Job, dict]]:
+    ) -> Sequence[Job | dict]:
         """Get job dicts by job IDs or BUILD.
 
         Either 'jobs' or 'build' must be specified.
@@ -407,7 +398,8 @@ class OpenQA_Client:
             # this gets all jobdicts with a single API query
             params = {"ids": ",".join(str(j) for j in jobs)}
         else:
-            assert build is not None
+            if build is None:  # pragma: no cover — guarded above
+                raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
             params = {"build": build}
         if filter_dupes:
             params["latest"] = "1"
@@ -447,4 +439,4 @@ class OpenQA_Client:
             builds = [r["build"] for r in passed if r["build"].isdigit()]
         else:
             builds = [r["build"] for r in resp["build_results"] if r["build"].isdigit()]
-        return sorted(builds, key=sort_key)[-1] if builds else ""
+        return max(builds, key=sort_key) if builds else ""
