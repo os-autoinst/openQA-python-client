@@ -7,7 +7,7 @@ authors = [
 description = "Python client library for openQA API"
 readme = "README.md"
 license = { file="COPYING" }
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
