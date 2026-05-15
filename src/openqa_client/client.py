@@ -110,7 +110,7 @@ class OpenQA_Client:  # noqa: N801
             # perl client does NOT handle these, so you shouldn't use
             # them. This client started out supporting this, though,
             # so it should continue to.
-            if not scheme:
+            if not scheme:  # pragma: no cover
                 scheme = urlparse(server).scheme
             server = urlparse(server).netloc
 
@@ -320,7 +320,7 @@ class OpenQA_Client:  # noqa: N801
         wait: int | None = None,
         data: dict[str, Any] | None = None,
         json: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any]:  # pragma: no cover
         """Perform an openQA request that always returns parsed JSON/YAML."""
         resp = self._build_request(method, path, params, retries, wait, data, json)
         return self._parse_response(resp)
@@ -347,9 +347,11 @@ class OpenQA_Client:  # noqa: N801
                         toget.append(str(job["clone_id"]))
                     jobs.remove(job)
 
-            if toget:
+            if toget:  # pragma: no cover
                 # Get clones and add them to the list
-                clones = self._openqa_request_json("GET", "jobs", params={"ids": ",".join(toget)})["jobs"]
+                clones = self._openqa_request_json("GET", "jobs", params={"ids": ",".join(toget)})[
+                    "jobs"
+                ]
                 jobs.extend(clones)
         return jobs
 

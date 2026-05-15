@@ -39,10 +39,6 @@ source = ["src", ".tox/**/site-packages"]
 [tool.coverage.report]
 show_missing = true
 
-[tool.black]
-# don't @ me, Hynek
-line-length = 100
-
 [tool.setuptools.dynamic]
 dependencies = { file = ["install.requires"] }
 
@@ -158,6 +154,7 @@ max-args = 7
 [tool.ruff.format]
 # Enable reformatting of code snippets in docstrings.
 docstring-code-format = true
+exclude = ["src/openqa_client/const.py"]
 
 [tool.ruff.lint.flake8-copyright]
 author = "Red Hat"
