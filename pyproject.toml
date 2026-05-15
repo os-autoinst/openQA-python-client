@@ -149,7 +149,7 @@ max-positional-args = 7
 max-args = 7
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004", "ANN401", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103", "PLR6301", "FA100", "FA102"]
+"tests/*" = ["PLR2004", "ANN401", "ANN001", "ANN201", "ANN202", "PLR0913", "S101", "S105", "S106", "PLR0917", "D103", "PLR6301", "FA100", "FA102"]
 # const.py uses intentional aligned columns and single quotes; preserve them
 "src/openqa_client/const.py" = ["E221", "E222", "Q000"]
 # client.py retry logic: intentional raise-inside-try pattern; TypeError("msg") is idiomatic

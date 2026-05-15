@@ -29,7 +29,7 @@ class OpenQAClientError(Exception):
     """Base class for openQA client errors."""
 
 
-class ConnectionError(OpenQAClientError):
+class OpenQAConnectionError(OpenQAClientError):
     """Error raised when server connection fails.
 
     Just passed through requests.exceptions.ConnectionError.
@@ -50,3 +50,7 @@ class RequestError(OpenQAClientError):
         self.url = url
         self.status_code = status_code
         self.text = text
+
+
+# Backwards-compat alias for the pre-rename name (which shadowed the builtin).
+ConnectionError = OpenQAConnectionError  # noqa: A001

@@ -212,7 +212,7 @@ class TestClient:
         params = {"id": "1"}
         request = requests.Request(url=client.baseurl + "/api/v1/jobs", method="GET", params=params)
         # if send raises ConnectionError, we should raise ours
-        with pytest.raises(oqe.ConnectionError):
+        with pytest.raises(oqe.OpenQAConnectionError):
             client.do_request(request, retries=2, wait=5)
         # we should also have retried 2 times, with a wait based on 5
         assert fakesend.call_count == 3
@@ -271,7 +271,7 @@ class TestClient:
         fakesleep = mocker.patch("time.sleep", autospec=True)
         client = oqc.OpenQA_Client(retries=3)
 
-        with pytest.raises(oqe.ConnectionError):
+        with pytest.raises(oqe.OpenQAConnectionError):
             client.openqa_request("get", "jobs", wait=42)
 
         assert fakesend.call_count == 4, "expected the class global retries to be used"
@@ -283,7 +283,7 @@ class TestClient:
         fakesend.reset_mock()
         fakesleep.reset_mock()
 
-        with pytest.raises(oqe.ConnectionError):
+        with pytest.raises(oqe.OpenQAConnectionError):
             client.openqa_request("get", "jobs", retries=1)
 
         assert fakesend.call_count == 2, (
@@ -407,7 +407,7 @@ class TestClient:
         assert err.status_code == 404
         assert err.text == template_error
 
-        err = oqe.ConnectionError("oh no")
+        err = oqe.OpenQAConnectionError("oh no")
         assert err.args[0] == "oh no"
         assert err.err == "oh no"
 

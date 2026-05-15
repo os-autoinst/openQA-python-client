@@ -173,10 +173,10 @@ class OpenQA_Client:  # noqa: N801
         """Prepare and submit a Request, returning the raw response.
 
         Use openqa_request() for typical API calls, which also handle parsing.
-        May raise ConnectionError or RequestError after 'retries' attempts.
-        'wait' determines how long we wait between retries: on the *first*
-        retry we wait exactly 'wait' seconds, on each subsequent retry the wait
-        time is doubled, up to a max of 60 seconds between attempts.
+        May raise OpenQAConnectionError or RequestError after 'retries'
+        attempts. 'wait' determines how long we wait between retries: on the
+        *first* retry we wait exactly 'wait' seconds, on each subsequent retry
+        the wait time is doubled, up to a max of 60 seconds between attempts.
 
         If wait or retries are None, then the global values of this class are
         used or the defaults apply.
@@ -212,7 +212,7 @@ class OpenQA_Client:  # noqa: N801
                 return self.do_request(request, retries=retries - 1, wait=newwait)
             if isinstance(err, openqa_client.exceptions.RequestError):
                 raise err
-            raise openqa_client.exceptions.ConnectionError(err)
+            raise openqa_client.exceptions.OpenQAConnectionError(err) from err
 
     @staticmethod
     def _parse_response(resp: requests.Response) -> dict[str, Any]:
