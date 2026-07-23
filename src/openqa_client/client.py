@@ -393,13 +393,13 @@ class OpenQA_Client:  # noqa: N801
         work correctly.
         """
         if not build and not jobs:
-            raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
+            raise openqa_client.exceptions.MissingArgumentError
         if jobs:
             # this gets all jobdicts with a single API query
             params = {"ids": ",".join(str(j) for j in jobs)}
         else:
             if build is None:  # pragma: no cover — guarded above
-                raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
+                raise openqa_client.exceptions.MissingArgumentError
             params = {"build": build}
         if filter_dupes:
             params["latest"] = "1"

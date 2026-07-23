@@ -39,6 +39,13 @@ class OpenQAConnectionError(OpenQAClientError):
         self.err = err
 
 
+class MissingArgumentError(OpenQAClientError, TypeError):
+    """Raised when get_jobs receives neither jobs nor build."""
+
+    def __init__(self) -> None:
+        super().__init__("iterate_jobs: either 'jobs' or 'build' must be specified")
+
+
 class RequestError(OpenQAClientError):
     """Error raised when a request fails (after retries).
 
