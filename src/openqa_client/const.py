@@ -15,8 +15,9 @@
 #
 # Authors: Adam Williamson <awilliam@redhat.com>
 
-"""Important constants duplicated from openQA. We need to keep this in
-sync with upstream, but it's better to have it done just once here
+"""Important constants duplicated from openQA.
+
+We need to keep this in sync with upstream, but it's better to have it done just once here
 rather than every consumer of this library duplicating things like
 'these are the "running" states' on the fly. It is explicitly allowed
 to use 'from openqa_client.const import *'; this will only import
@@ -112,7 +113,7 @@ JOB_ABORTED_RESULTS = (
     JOB_RESULT_USER_CANCELLED,
     JOB_RESULT_USER_RESTARTED
 )
-JOB_NOT_OK_RESULTS = (JOB_RESULT_FAILED,) + JOB_NOT_COMPLETE_RESULTS + JOB_ABORTED_RESULTS
+JOB_NOT_OK_RESULTS = (JOB_RESULT_FAILED, *JOB_NOT_COMPLETE_RESULTS, *JOB_ABORTED_RESULTS)
 JOB_OK_RESULTS = (JOB_RESULT_PASSED, JOB_RESULT_SOFTFAILED)
 
 # 'meta' results
@@ -122,4 +123,4 @@ JOB_RESULT_ABORTED =      "aborted"
 
 # Scenarios
 JOB_SCENARIO_KEYS              = ('DISTRI', 'VERSION', 'FLAVOR', 'ARCH', 'TEST')
-JOB_SCENARIO_WITH_MACHINE_KEYS = JOB_SCENARIO_KEYS + ('MACHINE',)
+JOB_SCENARIO_WITH_MACHINE_KEYS = (*JOB_SCENARIO_KEYS, 'MACHINE')

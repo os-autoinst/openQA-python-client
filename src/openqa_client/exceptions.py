@@ -17,31 +17,47 @@
 
 """Custom exceptions used by openqa_client."""
 
-from requests.exceptions import ConnectionError as RConnectionError
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from requests.exceptions import ConnectionError as RConnectionError
 
 
 class OpenQAClientError(Exception):
     """Base class for openQA client errors."""
 
-    pass
 
+class OpenQAConnectionError(OpenQAClientError):
+    """Error raised when server connection fails.
 
-class ConnectionError(OpenQAClientError):
-    """Error raised when server connection fails. Just passed through
-    requests.exceptions.ConnectionError.
+    Just passed through requests.exceptions.ConnectionError.
     """
 
     def __init__(self, err: RConnectionError) -> None:
         self.err = err
 
 
+class MissingArgumentError(OpenQAClientError, TypeError):
+    """Raised when get_jobs receives neither jobs nor build."""
+
+    def __init__(self) -> None:
+        super().__init__("iterate_jobs: either 'jobs' or 'build' must be specified")
+
+
 class RequestError(OpenQAClientError):
-    """Error raised when a request fails (after retries). 3-tuple of
-    method, URL, and status code.
+    """Error raised when a request fails (after retries).
+
+    3-tuple of method, URL, and status code.
     """
 
-    def __init__(self, method: str, url: str, status_code: int, text: str) -> None:
+    def __init__(self, method: str | None, url: str, status_code: int, text: str) -> None:
         self.method = method
         self.url = url
         self.status_code = status_code
         self.text = text
+
+
+# Backwards-compat alias for the pre-rename name (which shadowed the builtin).
+ConnectionError = OpenQAConnectionError  # noqa: A001

@@ -19,60 +19,56 @@
 
 """Main client functionality."""
 
+from __future__ import annotations
+
+import configparser
 import hashlib
 import hmac
-import os
 import logging
 import time
-import sys
+from http import HTTPStatus
+from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    MutableMapping,
+    Literal,
     NoReturn,
-    Optional,
-    Sequence,
+    TypedDict,
     Union,
     overload,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, MutableMapping, Sequence
 from urllib.parse import urlparse, urlunparse
-import configparser
+
 import requests
 import yaml
 
 import openqa_client.exceptions
 
-if sys.version_info >= (3, 8):
-    from typing import Literal, TypedDict
-else:  # pragma: no cover
-    from typing_extensions import Literal, TypedDict  # pragma: no cover
-
-
 logger = logging.getLogger(__name__)
 
 
 RequestMethod = Literal["get", "put", "post", "delete", "GET", "PUT", "POST", "DELETE"]
+OpenQAResponse = Union[dict[str, Any], requests.Response]
 
 
 class Job(TypedDict):
     """Response from openQA about a job."""
 
     #: settings of this job as reported in the webui
-    settings: Dict[str, str]
+    settings: dict[str, str]
     #: this jobs unique identifier
     id: int
     #: the unique identifier of the job as which this job has been cloned
     clone_id: int
 
 
-## MAIN CLIENT CLASS
+class OpenQA_Client:  # noqa: N801
+    """A client for the OpenQA REST API.
 
-
-class OpenQA_Client:
-    """A client for the OpenQA REST API; just handles API auth if
-    needed and provides a couple of custom methods for convenience.
+    Handles API auth if needed and provides a couple of custom methods for convenience.
 
     Args:
         server: The URL or hostname of the openqa server.
@@ -86,6 +82,7 @@ class OpenQA_Client:
         wait: A default value for the time to wait between attempted requests
               in seconds. The value provided to the respective method calls
               takes precedence over this.
+
     """
 
     def __init__(
@@ -95,8 +92,8 @@ class OpenQA_Client:
         self.wait = wait
         # Read in config files.
         config = configparser.ConfigParser()
-        paths = ("/etc/openqa", f"{os.path.expanduser('~')}/.config/openqa")
-        config.read(f"{path}/client.conf" for path in paths)
+        paths = (Path("/etc/openqa"), Path.home() / ".config/openqa")
+        config.read(path / "client.conf" for path in paths)
 
         # If server not specified, default to the first one in the
         # configuration file. If no configuration file, default to
@@ -113,17 +110,16 @@ class OpenQA_Client:
             # perl client does NOT handle these, so you shouldn't use
             # them. This client started out supporting this, though,
             # so it should continue to.
-            if not scheme:
+            if not scheme:  # pragma: no cover
                 scheme = urlparse(server).scheme
             server = urlparse(server).netloc
 
         if not scheme:
-            if server in ("localhost", "127.0.0.1", "::1"):
+            scheme = "https"
+            if server in {"localhost", "127.0.0.1", "::1"}:
                 # Default to non-TLS for localhost; cert is unlikely to
                 # be valid for 'localhost' and there's no MITM...
                 scheme = "http"
-            else:
-                scheme = "https"
 
         self.baseurl = urlunparse((scheme, server, "", "", "", ""))
 
@@ -150,8 +146,9 @@ class OpenQA_Client:
         self.session.headers.update(headers)
 
     def _add_auth_headers(self, request: requests.PreparedRequest) -> requests.PreparedRequest:
-        """Add authentication headers to a PreparedRequest. See
-        openQA/lib/OpenQA/client.pm for the authentication design.
+        """Add authentication headers to a PreparedRequest.
+
+        See openQA/lib/OpenQA/client.pm for the authentication design.
         """
         if not self.apisecret:
             # Can't auth without an API key.
@@ -167,42 +164,19 @@ class OpenQA_Client:
         request.headers.update(headers)
         return request
 
-    @overload
     def do_request(
         self,
         request: requests.Request,
-        retries: Optional[int] = None,
-        wait: Optional[Union[int, float]] = None,
-        parse: Literal[False] = False,
-    ) -> requests.Response: ...  # pragma: no cover
+        retries: int | None = None,
+        wait: float | None = None,
+    ) -> requests.Response:
+        """Prepare and submit a Request, returning the raw response.
 
-    @overload
-    def do_request(
-        self,
-        request: requests.Request,
-        retries: Optional[int] = None,
-        wait: Optional[Union[int, float]] = None,
-        parse: Literal[True] = True,
-    ) -> Any: ...  # pragma: no cover
-
-    def do_request(
-        self,
-        request: requests.Request,
-        retries: Optional[int] = None,
-        wait: Optional[Union[int, float]] = None,
-        parse: bool = True,
-    ) -> Union[Any, requests.Response]:
-        """Passed a requests.Request, prepare it with the necessary
-        headers, submit it, and return the parsed output (unless parse
-        is False, in which case return the response for the caller to
-        do whatever it likes with). You can use this directly instead
-        of openqa_request() if you need to do something unusual. May
-        raise ConnectionError or RequestError if the connection or the
-        request fail in some way after 'retries' attempts. 'wait'
-        determines how long we wait between retries: on the *first*
-        retry we wait exactly 'wait' seconds, on each subsequent retry
-        the wait time is doubled, up to a max of 60 seconds between
-        attempts.
+        Use openqa_request() for typical API calls, which also handle parsing.
+        May raise OpenQAConnectionError or RequestError after 'retries'
+        attempts. 'wait' determines how long we wait between retries: on the
+        *first* retry we wait exactly 'wait' seconds, on each subsequent retry
+        the wait time is doubled, up to a max of 60 seconds between attempts.
 
         If wait or retries are None, then the global values of this class are
         used or the defaults apply.
@@ -223,16 +197,7 @@ class OpenQA_Client:
                 raise openqa_client.exceptions.RequestError(
                     request.method, resp.url, resp.status_code, resp.text
                 )
-            if not parse or resp.status_code == 204:
-                return resp
-            # check if the server sent us YAML when we asked for JSON
-            contype = resp.headers.get("content-type", "")
-            if contype.startswith("text/yaml"):
-                # FullLoader should also be fine as we trust the devs,
-                # but I doubt they're gonna put anything beyond
-                # SafeLoader's capacity in the responses
-                return yaml.load(resp.text, Loader=yaml.SafeLoader)
-            return resp.json()
+            return resp
         except (requests.exceptions.ConnectionError, openqa_client.exceptions.RequestError) as err:
             # We could use urllib3.util.Retry here, but that actually
             # results in more lines of code than doing it ourselves
@@ -247,23 +212,35 @@ class OpenQA_Client:
                 return self.do_request(request, retries=retries - 1, wait=newwait)
             if isinstance(err, openqa_client.exceptions.RequestError):
                 raise err
-            if isinstance(err, requests.exceptions.ConnectionError):
-                raise openqa_client.exceptions.ConnectionError(err)
-            assert False, "This code path must be unreachable"
+            raise openqa_client.exceptions.OpenQAConnectionError(err) from err
 
-    def openqa_request(
+    @staticmethod
+    def _parse_response(resp: requests.Response) -> dict[str, Any]:
+        """Parse JSON or YAML from a response body."""
+        # check if the server sent us YAML when we asked for JSON
+        if resp.headers.get("content-type", "").startswith("text/yaml"):
+            # FullLoader should also be fine as we trust the devs,
+            # but I doubt they're gonna put anything beyond
+            # SafeLoader's capacity in the responses
+            return yaml.load(resp.text, Loader=yaml.SafeLoader)
+        return resp.json()
+
+    def _build_request(
         self,
         method: RequestMethod,
         path: str,
-        params: Any = None,
-        retries: Optional[int] = None,
-        wait: Optional[int] = None,
-        data: Any = None,
-        json: Any = None,
-    ):
-        """Perform a typical openQA request, with an API path and some
-        optional parameters. Use the data parameter instead of params if you
-        need to pass lots of settings. It will post
+        params: dict[str, Any] | None = None,
+        retries: int | None = None,
+        wait: int | None = None,
+        data: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> requests.Response:
+        """Build, send, and retry an openQA API request.
+
+        Handles settings-list conversion and path prefixing, then delegates
+        to do_request for transport and retries.
+
+        Use the data parameter instead of params if you need to pass lots of settings. It will post
         application/x-www-form-urlencoded data. Use the json parameter if you
         are POSTing or PUTing to one of the endpoints that requires a
         JSON-encoded request - test_suites, machines, or products. It will
@@ -289,10 +266,10 @@ class OpenQA_Client:
         # we have to work around a limitation in the API: when modifying job
         # groups, products, etc. that take a settings parameter, then this
         # settings parameter gets returned to us as a list like this:
-        # [{"key": "varname", "value": "var_value"}]
+        # [{"key": "varname", "value": "var_value"}]  # noqa: ERA001
         # But when we sent the reply back, we must send these settings in a
         # simple dict like this:
-        # {"varname": "var_value"}
+        # {"varname": "var_value"}  # noqa: ERA001
         for payload in (params, data, json):
             if (
                 payload is not None
@@ -310,10 +287,48 @@ class OpenQA_Client:
 
         url = f"{self.baseurl}{path}"
         req = requests.Request(method=method.upper(), url=url, params=params, data=data, json=json)
-        return self.do_request(req, retries=retries, wait=wait, parse=True)
+        return self.do_request(req, retries=retries, wait=wait)
+
+    def openqa_request(
+        self,
+        method: RequestMethod,
+        path: str,
+        params: dict[str, Any] | None = None,
+        retries: int | None = None,
+        wait: int | None = None,
+        data: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> OpenQAResponse:
+        """Perform an openQA request that may return 204 No Content.
+
+        Returns the parsed response body, or the raw Response for 204.
+        """
+        resp = self._build_request(method, path, params, retries, wait, data, json)
+        if resp.status_code == HTTPStatus.NO_CONTENT:
+            # job_templates_scheduling/:id returns 204 No Content on success;
+            # there is no body to parse so return the response for the caller
+            # to inspect if needed.
+            return resp
+        return self._parse_response(resp)
+
+    def _openqa_request_json(
+        self,
+        method: RequestMethod,
+        path: str,
+        params: dict[str, Any] | None = None,
+        retries: int | None = None,
+        wait: int | None = None,
+        data: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:  # pragma: no cover
+        """Perform an openQA request that always returns parsed JSON/YAML."""
+        resp = self._build_request(method, path, params, retries, wait, data, json)
+        return self._parse_response(resp)
 
     def find_clones(self, jobs: Sequence[Job]) -> Sequence[Job]:
-        """Given an iterable of job dicts, this will see if any of the
+        """Follow the clone chain of each job and return the resulting list.
+
+        Given an iterable of job dicts, this will see if any of the
         jobs were cloned, and replace any that were cloned with the dicts
         of their clones, returning a list. It recurses - so if 3 was
         cloned as 4 and 4 was cloned as 5, you'll wind up with 5. If both
@@ -332,32 +347,36 @@ class OpenQA_Client:
                         toget.append(str(job["clone_id"]))
                     jobs.remove(job)
 
-            if toget:
+            if toget:  # pragma: no cover
                 # Get clones and add them to the list
-                clones = self.openqa_request("GET", "jobs", params={"ids": ",".join(toget)})["jobs"]
+                clones = self._openqa_request_json("GET", "jobs", params={"ids": ",".join(toget)})[
+                    "jobs"
+                ]
                 jobs.extend(clones)
         return jobs
 
     @overload
     def get_jobs(
-        self, jobs: Literal[None], build: Literal[None], filter_dupes: bool
+        self, jobs: None, build: None, filter_dupes: bool
     ) -> NoReturn: ...  # pragma: no cover
 
     @overload
     def get_jobs(
         self,
-        jobs: Optional[Sequence[Union[str, int]]],
-        build: Optional[str],
+        jobs: Sequence[str | int] | None,
+        build: str | None,
         filter_dupes: bool,
-    ): ...  # pragma: no cover
+    ) -> Sequence[Job | dict]: ...  # pragma: no cover
 
     def get_jobs(
         self,
-        jobs: Optional[Sequence[Union[str, int]]] = None,
-        build: Optional[str] = None,
+        jobs: Sequence[str | int] | None = None,
+        build: str | None = None,
         filter_dupes: bool = True,
-    ) -> Sequence[Union[Job, dict]]:
-        """Get job dicts. Either 'jobs' or 'build' must be specified.
+    ) -> Sequence[Job | dict]:
+        """Get job dicts by job IDs or BUILD.
+
+        Either 'jobs' or 'build' must be specified.
         'jobs' should be iterable of job IDs (string or int). 'build'
         should be an openQA BUILD to get all the jobs for. If both are
         specified, 'jobs' will be used and 'build' ignored. If
@@ -376,16 +395,17 @@ class OpenQA_Client:
         work correctly.
         """
         if not build and not jobs:
-            raise TypeError("iterate_jobs: either 'jobs' or 'build' must be specified")
+            raise openqa_client.exceptions.MissingArgumentError
         if jobs:
             # this gets all jobdicts with a single API query
             params = {"ids": ",".join(str(j) for j in jobs)}
         else:
-            assert build is not None
+            if build is None:  # pragma: no cover — guarded above
+                raise openqa_client.exceptions.MissingArgumentError
             params = {"build": build}
         if filter_dupes:
             params["latest"] = "1"
-        jobdicts = self.openqa_request("GET", "jobs", params=params)["jobs"]
+        jobdicts = self._openqa_request_json("GET", "jobs", params=params)["jobs"]
         if filter_dupes:
             # sub out clones. when run on a BUILD this is superfluous
             # as 'latest' will always wind up finding the latest clone
@@ -401,7 +421,7 @@ class OpenQA_Client:
         all_passed: bool = True,
         sort_key: Callable = int,
     ) -> str:
-        """Identify latest build number in target Job Group
+        """Identify latest build number in target Job Group.
 
         Args:
             group_id (int): Job Group ID
@@ -413,11 +433,12 @@ class OpenQA_Client:
 
         Returns:
             str: string representation of last BUILD
+
         """
-        resp = self.openqa_request("GET", f"job_groups/{group_id}/build_results")
+        resp = self._openqa_request_json("GET", f"job_groups/{group_id}/build_results")
         if all_passed:
             passed = [r for r in resp["build_results"] if r["all_passed"] == 1]
             builds = [r["build"] for r in passed if r["build"].isdigit()]
         else:
             builds = [r["build"] for r in resp["build_results"] if r["build"].isdigit()]
-        return sorted(builds, key=sort_key)[-1] if builds else ""
+        return max(builds, key=sort_key) if builds else ""

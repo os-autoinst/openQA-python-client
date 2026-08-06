@@ -1,6 +1,7 @@
 coverage
 freezegun
 pytest
+pytest-mock
 mypy
 types-requests
 types-PyYAML

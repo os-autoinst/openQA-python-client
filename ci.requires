@@ -1,8 +1,7 @@
-black
 coverage
 diff-cover
+ruff
 mypy
-pylint
 toml
 types-requests
 types-PyYAML

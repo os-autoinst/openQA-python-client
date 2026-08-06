@@ -15,16 +15,17 @@
 #
 # Author: Adam Williamson <awilliam@redhat.com>
 
-from setuptools import setup
-from os import path
+"""Package setup for openqa_client."""
 
-HERE = path.abspath(path.dirname(__file__))
+from pathlib import Path
+
+from setuptools import setup
+
+HERE = Path(__file__).resolve().parent
 
 # Get the long description from the README file
-with open(path.join(HERE, "README.md"), encoding="utf-8") as f:
-    LONGDESC = f.read()
-with open("install.requires", encoding="utf-8") as f:
-    INSTALLDEPS = f.read().splitlines()
+LONGDESC = (HERE / "README.md").read_text(encoding="utf-8")
+INSTALLDEPS = Path("install.requires").read_text(encoding="utf-8").splitlines()
 
 setup(
     name="openqa_client",
