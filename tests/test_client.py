@@ -98,14 +98,18 @@ class TestClient:
         assert prepared.headers != authed.headers
         assert authed.headers["X-API-Hash"] == "71373f0a57118b120d1915ccc0a24ae2cc112ad3"
         assert authed.headers["X-API-Microtime"] == "1582761600.0"
-        # with no key/secret, request should be returned unmodified
+        # with no key/secret, only the API request marker should be added
         client = oqc.OpenQA_Client("localhost")
         request = requests.Request(
             url=client.baseurl + "/api/v1/jobs ", method="GET", params=params
         )
         prepared = client.session.prepare_request(request)
         authed = client._add_auth_headers(prepared)
-        assert prepared.headers == authed.headers
+        assert prepared.headers != authed.headers
+        assert "X-API-Microtime" not in prepared.headers
+        assert authed.headers["X-API-Microtime"] == "1582761600.0"
+        assert "X-API-Key" not in authed.headers
+        assert "X-API-Hash" not in authed.headers
 
     @mock.patch("requests.sessions.Session.send", autospec=True)
     def test_do_request_ok(self, fakesend, simple_config):
