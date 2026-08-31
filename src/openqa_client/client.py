@@ -151,19 +151,17 @@ class OpenQA_Client:
 
     def _add_auth_headers(self, request: requests.PreparedRequest) -> requests.PreparedRequest:
         """Add authentication headers to a PreparedRequest. See
-        openQA/lib/OpenQA/client.pm for the authentication design.
+        openQA/lib/OpenQA/UserAgent.pm for the authentication design.
         """
-        if not self.apisecret:
-            # Can't auth without an API key.
-            return request
         # don't modify the original
         request = request.copy()
         timestamp = time.time()
-        path = request.path_url.replace("%20", "+").replace("~", "%7E")
-        apihash = hmac.new(self.apisecret.encode(), f"{path}{timestamp}".encode(), hashlib.sha1)
         headers: MutableMapping[str, str] = {}
         headers["X-API-Microtime"] = str(timestamp)
-        headers["X-API-Hash"] = apihash.hexdigest()
+        if self.apisecret:
+            path = request.path_url.replace("%20", "+").replace("~", "%7E")
+            apihash = hmac.new(self.apisecret.encode(), f"{path}{timestamp}".encode(), hashlib.sha1)
+            headers["X-API-Hash"] = apihash.hexdigest()
         request.headers.update(headers)
         return request
 
